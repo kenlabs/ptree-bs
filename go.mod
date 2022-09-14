@@ -1,4 +1,4 @@
-module ptree
+module ptree-bs
 
 go 1.19
 

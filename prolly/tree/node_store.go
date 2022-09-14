@@ -19,6 +19,8 @@ var LinkProto = cidlink.LinkPrototype{
 	},
 }
 
+const CidBytesLen = 20
+
 type NodeStore struct {
 	bs blockstore.Blockstore
 }

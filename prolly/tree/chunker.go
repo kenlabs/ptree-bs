@@ -16,6 +16,10 @@ type Chunker struct {
 	ns *NodeStore
 }
 
+func NewEmptyChunker(ctx context.Context, ns *NodeStore) (*Chunker, error) {
+	return newChunker(ctx, 0, ns)
+}
+
 func newChunker(ctx context.Context, level int, ns *NodeStore) (*Chunker, error) {
 	splitter := defaultSplitterFactory(uint8(level % 256))
 	builider := newNodeBuilder(level)
@@ -32,7 +36,8 @@ func newChunker(ctx context.Context, level int, ns *NodeStore) (*Chunker, error)
 }
 
 func (c *Chunker) AddPair(ctx context.Context, key, value []byte) error {
-	return nil
+	_, err := c.append(ctx, key, value, 1)
+	return err
 }
 
 func (c *Chunker) append(ctx context.Context, key, value []byte, subtree uint64) (bool, error) {
@@ -163,6 +168,7 @@ func (c *Chunker) Done(ctx context.Context) (*Node, error) {
 		return novel.node, err
 	}
 
+	return getCanonicalRoot(ctx, c.ns, c.builder)
 }
 
 func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) (*Node, error) {
@@ -171,5 +177,18 @@ func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) 
 		return nil, fmt.Errorf("invalid count")
 	}
 	nd := builder.build()
+	childAddr := nd.getAddress(0)
+
+	for {
+		child, err := ns.Read(ctx, childAddr)
+		if err != nil {
+			return nil, err
+		}
+
+		if child.IsLeaf() || child.Count() > 1 {
+			return child, nil
+		}
+		childAddr = child.getAddress(0)
+	}
 
 }

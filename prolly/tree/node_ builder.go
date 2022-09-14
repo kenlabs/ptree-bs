@@ -80,7 +80,9 @@ func writeNewNode(ctx context.Context, ns *NodeStore, nb *nodeBuilder) (*novelNo
 
 	var lastKey []byte
 	if node.Count() > 0 {
-		copy(lastKey, node.Keys[node.Count()-1])
+		k := node.GetKey(node.Count() - 1)
+		lastKey = make([]byte, len(k))
+		copy(lastKey, k)
 	}
 
 	treeCount := uint64(node.TreeCount())
