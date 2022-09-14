@@ -49,6 +49,10 @@ func NewStaticProllyTree(node *tree.Node, ns *tree.NodeStore) *StaticTree {
 	}
 }
 
+func (st *StaticTree) Mutate() *MutableProllyTree {
+	return NewMutableProllyTree(st)
+}
+
 func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
 	cur, err := tree.NewLeafCursorAtItem(ctx, st.ns, st.root, key, searchNode)
 	if err != nil {
@@ -68,4 +72,18 @@ func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
 	} else {
 		return nil, fmt.Errorf("invalid cursor")
 	}
+}
+
+func (st *StaticTree) Has(ctx context.Context, key []byte) (bool, error) {
+	cur, err := tree.NewLeafCursorAtItem(ctx, st.ns, st.root, key, searchNode)
+	if err != nil {
+		return false, err
+	}
+
+	if cur.Valid() {
+		ok := DefaultBytesCompare(key, cur.CurrentKey()) == 0
+		return ok, nil
+	}
+
+	return false, fmt.Errorf("invalid cursor")
 }

@@ -34,7 +34,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 
 	st := NewStaticProllyTree(root, ns)
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		idx := rand.Intn(100000)
 		val, err := st.Get(ctx, testdata[idx][0])
 		if err != nil {
@@ -43,4 +43,11 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 		assert.Equal(t, val, testdata[idx][1])
 	}
 
+	for i := 0; i < 1000; i++ {
+		ok, err := st.Has(ctx, testdata[i][0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, ok)
+	}
 }
