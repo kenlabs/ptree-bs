@@ -54,3 +54,7 @@ func (nd *Node) getAddress(i int) cid.Cid {
 	}
 	return c
 }
+
+func (nd *Node) getSubtreeCounts() []uint64 {
+	return nd.Subtrees
+}

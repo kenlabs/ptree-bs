@@ -6,6 +6,7 @@ import (
 )
 
 type Chunker struct {
+	cur    *Cursor
 	parent *Chunker
 	level  int
 	done   bool
@@ -20,11 +21,12 @@ func NewEmptyChunker(ctx context.Context, ns *NodeStore) (*Chunker, error) {
 	return newChunker(ctx, 0, ns)
 }
 
-func newChunker(ctx context.Context, level int, ns *NodeStore) (*Chunker, error) {
+func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore) (*Chunker, error) {
 	splitter := defaultSplitterFactory(uint8(level % 256))
 	builider := newNodeBuilder(level)
 
 	c := &Chunker{
+		cur:      cur,
 		parent:   nil,
 		level:    level,
 		splitter: splitter,
@@ -32,7 +34,37 @@ func newChunker(ctx context.Context, level int, ns *NodeStore) (*Chunker, error)
 		ns:       ns,
 	}
 
+	if cur != nil {
+		if err := c.processPrefix(ctx); err != nil {
+			return nil, err
+		}
+	}
+
 	return c, nil
+}
+
+func (c *Chunker) processPrefix(ctx context.Context) error {
+	if c.cur.parent != nil && c.parent == nil {
+		if err := c.createParentChunker(ctx); err != nil {
+			return err
+		}
+	}
+
+	idx := c.cur.idx
+	c.cur.skipToNodeStart()
+
+	for c.cur.idx < idx {
+		_, err := c.append(ctx,
+			c.cur.CurrentKey(),
+			c.cur.CurrentValue(),
+			c.cur.CurrentSubtreeSize())
+		if err != nil {
+			return err
+		}
+
+		err = c.cur.Advance(ctx)
+	}
+
 }
 
 func (c *Chunker) AddPair(ctx context.Context, key, value []byte) error {
@@ -123,7 +155,12 @@ func (c *Chunker) createParentChunker(ctx context.Context) error {
 	}
 
 	var err error
-	c.parent, err = newChunker(ctx, c.level+1, c.ns)
+	var parent *Cursor
+	if c.cur != nil && c.cur.parent != nil {
+		parent = c.cur.parent
+	}
+
+	c.parent, err = newChunker(ctx, parent, c.level+1, c.ns)
 	if err != nil {
 		return err
 	}
