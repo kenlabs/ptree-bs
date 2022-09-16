@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"bytes"
 	"context"
 	"ptree-bs/prolly/skip"
 )
@@ -34,5 +35,53 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root *Node, edits *Mutat
 		return nil, err
 	}
 
-	ck, err := newChunker()
+	ck, err := newChunker(ctx, cur.Clone(), 0, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	for newKey != nil {
+		err = cur.seek(ctx, newKey, compare)
+		if err != nil {
+			return nil, err
+		}
+
+		var oldValue []byte
+		if cur.Valid() {
+			if compare(newKey, cur.CurrentKey()) == 0 {
+				oldValue = cur.CurrentValue()
+			}
+		}
+
+		if equalValues(newValue, oldValue) {
+			newKey, newValue = edits.NextMutation(ctx)
+			continue
+		}
+
+		err = ck.AdvanceTo(ctx, cur)
+		if err != nil {
+			return nil, err
+		}
+
+		if oldValue == nil {
+			err = ck.AddPair(ctx, newKey, newValue)
+		} else {
+			if newValue != nil {
+				err = ck.UpdatePair(ctx, newKey, newValue)
+			} else {
+				err = ck.DeletePair(ctx, newKey, newValue)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		newKey, newValue = edits.NextMutation(ctx)
+	}
+
+	return ck.Done(ctx)
+}
+
+func equalValues(left, right []byte) bool {
+	return bytes.Equal(left, right)
 }

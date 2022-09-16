@@ -40,12 +40,59 @@ func (cur *Cursor) CurrentSubtreeSize() uint64 {
 	return cur.subtrees[cur.idx]
 }
 
+func (cur *Cursor) atNodeEnd() bool {
+	lastKeyIdx := cur.nd.Count() - 1
+	return cur.idx == lastKeyIdx
+}
+
 func (cur *Cursor) isLeaf() bool {
 	return cur.level() == 0
 }
 
 func (cur *Cursor) level() uint64 {
 	return uint64(cur.nd.Level)
+}
+
+func (cur *Cursor) seek(ctx context.Context, key []byte, cp CompareFn) error {
+	inBounds := true
+	if cur.parent != nil {
+		inBounds = inBounds && cp(key, cur.firstKey()) >= 0
+		inBounds = inBounds && cp(key, cur.lastKey()) <= 0
+	}
+
+	if !inBounds {
+		err := cur.parent.seek(ctx, key, cp)
+		if err != nil {
+			return err
+		}
+		cur.parent.keepInBounds()
+
+		cur.nd, err = cur.ns.Read(ctx, cur.parent.CurrentRef())
+		if err != nil {
+			return err
+		}
+	}
+
+	cur.idx = cur.search(key, cp)
+
+	return nil
+}
+
+func (cur *Cursor) search(item []byte, cp CompareFn) int {
+	idx := sort.Search(cur.nd.Count(), func(i int) bool {
+		return cp(item, cur.nd.GetKey(i)) <= 0
+	})
+
+	return idx
+}
+
+func (cur *Cursor) firstKey() []byte {
+	return cur.nd.GetKey(0)
+}
+
+func (cur *Cursor) lastKey() []byte {
+	lastKeyIdx := cur.nd.Count() - 1
+	return cur.nd.GetKey(lastKeyIdx)
 }
 
 func (cur *Cursor) skipToNodeStart() {
@@ -128,6 +175,57 @@ func (cur *Cursor) Advance(ctx context.Context) error {
 	cur.subtrees = nil // lazy load
 
 	return nil
+}
+
+func compareCursors(left, right *Cursor) int {
+	diff := 0
+	for {
+		d := left.idx - right.idx
+		if d != 0 {
+			diff = d
+		}
+
+		if left.parent == nil || right.parent == nil {
+			break
+		}
+		left, right = left.parent, right.parent
+	}
+	return diff
+}
+
+func (cur *Cursor) Compare(other *Cursor) int {
+	return compareCursors(cur, other)
+}
+
+func (cur *Cursor) Clone() *Cursor {
+	_cur := &Cursor{
+		nd:  cur.nd,
+		idx: cur.idx,
+		ns:  cur.ns,
+	}
+
+	if cur.parent != nil {
+		_cur.parent = cur.parent.Clone()
+	}
+
+	return _cur
+}
+
+func (cur *Cursor) copy(other *Cursor) {
+	cur.nd = other.nd
+	cur.idx = other.idx
+	cur.ns = other.ns
+
+	if cur.parent != nil {
+		if other.parent == nil {
+			panic("invalid")
+		}
+		cur.parent.copy(other.parent)
+	} else {
+		if other.parent != nil {
+			panic("invalid")
+		}
+	}
 }
 
 func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n *Node, item []byte, compare CompareFn) (*Cursor, error) {

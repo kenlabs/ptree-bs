@@ -63,12 +63,32 @@ func (c *Chunker) processPrefix(ctx context.Context) error {
 		}
 
 		err = c.cur.Advance(ctx)
+		if err != nil {
+			return err
+		}
 	}
-
+	return nil
 }
 
 func (c *Chunker) AddPair(ctx context.Context, key, value []byte) error {
 	_, err := c.append(ctx, key, value, 1)
+	return err
+}
+
+func (c *Chunker) UpdatePair(ctx context.Context, key, value []byte) error {
+	if err := c.skip(ctx); err != nil {
+		return err
+	}
+	_, err := c.append(ctx, key, value, 1)
+	return err
+}
+
+func (c *Chunker) DeletePair(ctx context.Context, _, _ []byte) error {
+	return c.skip(ctx)
+}
+
+func (c *Chunker) skip(ctx context.Context) error {
+	err := c.cur.Advance(ctx)
 	return err
 }
 
@@ -168,6 +188,37 @@ func (c *Chunker) createParentChunker(ctx context.Context) error {
 	return nil
 }
 
+func (c *Chunker) finalizeCursor(ctx context.Context) error {
+	for c.cur.Valid() {
+		ok, err := c.append(ctx,
+			c.cur.CurrentKey(),
+			c.cur.CurrentValue(),
+			c.cur.CurrentSubtreeSize())
+		if err != nil {
+			return err
+		}
+		if ok && c.cur.atNodeEnd() {
+			break
+		}
+
+		err = c.cur.Advance(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	if c.cur.parent != nil {
+		err := c.cur.parent.Advance(ctx)
+		if err != nil {
+			return err
+		}
+
+		c.cur.nd = &Node{}
+	}
+
+	return nil
+}
+
 func (c *Chunker) anyPending() bool {
 	if c.builder.count() > 0 {
 		return true
@@ -189,6 +240,12 @@ func (c *Chunker) Done(ctx context.Context) (*Node, error) {
 		return nil, fmt.Errorf("repeated done for a chunker")
 	}
 	c.done = true
+
+	if c.cur != nil {
+		if err := c.finalizeCursor(ctx); err != nil {
+			return nil, err
+		}
+	}
 
 	if c.parent != nil && c.parent.anyPending() {
 		if c.builder.count() > 0 {
@@ -228,4 +285,67 @@ func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) 
 		childAddr = child.getAddress(0)
 	}
 
+}
+
+func (c *Chunker) AdvanceTo(ctx context.Context, next *Cursor) error {
+	cmp := c.cur.Compare(next)
+	if cmp == 0 {
+		return nil
+	} else if cmp > 0 {
+		for c.cur.Compare(next) > 0 {
+			if err := next.Advance(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	split, err := c.append(ctx, c.cur.CurrentKey(), c.cur.CurrentValue(), c.cur.CurrentSubtreeSize())
+	if err != nil {
+		return err
+	}
+
+	for !(split && c.cur.atNodeEnd()) {
+		err = c.cur.Advance(ctx)
+		if err != nil {
+			return err
+		}
+		if cmp = c.cur.Compare(next); cmp >= 0 {
+			// we caught up before synchronizing
+			return nil
+		}
+		split, err = c.append(ctx, c.cur.CurrentKey(), c.cur.CurrentValue(), c.cur.CurrentSubtreeSize())
+		if err != nil {
+			return err
+		}
+	}
+
+	if c.cur.parent == nil || next.parent == nil {
+		c.cur.copy(next)
+		return nil
+	}
+
+	if c.cur.parent.Compare(next.parent) == 0 {
+		c.cur.copy(next)
+		return nil
+	}
+
+	err = c.cur.parent.Advance(ctx)
+	if err != nil {
+		return err
+	}
+	c.cur.invalidate()
+
+	err = c.parent.AdvanceTo(ctx, next.parent)
+	if err != nil {
+		return err
+	}
+
+	c.cur.copy(next)
+
+	err = c.processPrefix(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
