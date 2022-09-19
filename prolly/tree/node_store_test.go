@@ -13,7 +13,7 @@ func TestNodeStoreWriteRead(t *testing.T) {
 	ns := NewNodeStore(bs)
 	ctx := context.Background()
 
-	n := &Node{
+	n := Node{
 		Keys:     [][]byte{[]byte("123key")},
 		Values:   [][]byte{[]byte("123val")},
 		Size:     1234,

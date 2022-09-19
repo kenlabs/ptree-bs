@@ -6,12 +6,12 @@ import (
 	"sort"
 )
 
-type ItemSearchFn func(item []byte, nd *Node) (idx int)
+type ItemSearchFn func(item []byte, nd Node) (idx int)
 
 type CompareFn func(left, right []byte) int
 
 type Cursor struct {
-	nd       *Node
+	nd       Node
 	idx      int
 	parent   *Cursor
 	subtrees []uint64
@@ -228,15 +228,15 @@ func (cur *Cursor) copy(other *Cursor) {
 	}
 }
 
-func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n *Node, item []byte, compare CompareFn) (*Cursor, error) {
-	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd *Node) (idx int) {
+func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n Node, item []byte, compare CompareFn) (*Cursor, error) {
+	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd Node) (idx int) {
 		return sort.Search(nd.Count(), func(i int) bool {
 			return compare(item, nd.GetKey(i)) <= 0
 		})
 	})
 }
 
-func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd *Node, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byte, search ItemSearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 
 	cur.idx = search(item, cur.nd)
@@ -259,7 +259,7 @@ func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd *Node, item []byte, 
 	return cur, nil
 }
 
-func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd *Node, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byte, search ItemSearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, parent: nil, ns: ns}
 
 	cur.idx = search(item, cur.nd)

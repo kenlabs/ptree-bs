@@ -7,7 +7,7 @@ import (
 )
 
 type novelNode struct {
-	node      *Node
+	node      Node
 	addr      cid.Cid
 	lastKey   []byte
 	treeCount uint64
@@ -47,13 +47,19 @@ func (nb *nodeBuilder) count() int {
 	return len(nb.keys)
 }
 
-func (nb *nodeBuilder) build() (node *Node) {
-	n := &Node{
-		Keys:     nb.keys,
-		Values:   nb.values,
+func (nb *nodeBuilder) build() (node Node) {
+	_keys := make([][]byte, len(nb.keys))
+	_vals := make([][]byte, len(nb.values))
+	_subtrees := make([]uint64, len(nb.subtrees))
+	copy(_keys, nb.keys)
+	copy(_vals, nb.values)
+	copy(_subtrees, nb.subtrees)
+	n := Node{
+		Keys:     _keys,
+		Values:   _vals,
 		Size:     nb.size,
 		Level:    nb.level,
-		Subtrees: nb.subtrees,
+		Subtrees: _subtrees,
 	}
 
 	nb.recycleBuffers()

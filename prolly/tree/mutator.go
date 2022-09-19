@@ -23,7 +23,7 @@ func (it *MutationIter) Close() error {
 	return nil
 }
 
-func ApplyMutations(ctx context.Context, ns *NodeStore, root *Node, edits *MutationIter, compare CompareFn) (*Node, error) {
+func ApplyMutations(ctx context.Context, ns *NodeStore, root Node, edits *MutationIter, compare CompareFn) (Node, error) {
 	newKey, newValue := edits.NextMutation(ctx)
 	if newKey == nil {
 		// no update
@@ -32,18 +32,18 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root *Node, edits *Mutat
 
 	cur, err := NewCursorFromCompareFn(ctx, ns, root, newKey, compare)
 	if err != nil {
-		return nil, err
+		return Node{}, err
 	}
 
 	ck, err := newChunker(ctx, cur.Clone(), 0, ns)
 	if err != nil {
-		return nil, err
+		return Node{}, err
 	}
 
 	for newKey != nil {
 		err = cur.seek(ctx, newKey, compare)
 		if err != nil {
-			return nil, err
+			return Node{}, err
 		}
 
 		var oldValue []byte
@@ -60,7 +60,7 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root *Node, edits *Mutat
 
 		err = ck.AdvanceTo(ctx, cur)
 		if err != nil {
-			return nil, err
+			return Node{}, err
 		}
 
 		if oldValue == nil {
@@ -73,7 +73,7 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root *Node, edits *Mutat
 			}
 		}
 		if err != nil {
-			return nil, err
+			return Node{}, err
 		}
 
 		newKey, newValue = edits.NextMutation(ctx)

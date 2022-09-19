@@ -18,7 +18,7 @@ type Chunker struct {
 }
 
 func NewEmptyChunker(ctx context.Context, ns *NodeStore) (*Chunker, error) {
-	return newChunker(ctx, 0, ns)
+	return newChunker(ctx, nil, 0, ns)
 }
 
 func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore) (*Chunker, error) {
@@ -213,7 +213,7 @@ func (c *Chunker) finalizeCursor(ctx context.Context) error {
 			return err
 		}
 
-		c.cur.nd = &Node{}
+		c.cur.nd = Node{}
 	}
 
 	return nil
@@ -235,22 +235,22 @@ func (c *Chunker) isLeaf() bool {
 	return c.level == 0
 }
 
-func (c *Chunker) Done(ctx context.Context) (*Node, error) {
+func (c *Chunker) Done(ctx context.Context) (Node, error) {
 	if c.done {
-		return nil, fmt.Errorf("repeated done for a chunker")
+		return Node{}, fmt.Errorf("repeated done for a chunker")
 	}
 	c.done = true
 
 	if c.cur != nil {
 		if err := c.finalizeCursor(ctx); err != nil {
-			return nil, err
+			return Node{}, err
 		}
 	}
 
 	if c.parent != nil && c.parent.anyPending() {
 		if c.builder.count() > 0 {
 			if err := c.handleBoundary(ctx); err != nil {
-				return nil, err
+				return Node{}, err
 			}
 		}
 
@@ -265,10 +265,10 @@ func (c *Chunker) Done(ctx context.Context) (*Node, error) {
 	return getCanonicalRoot(ctx, c.ns, c.builder)
 }
 
-func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) (*Node, error) {
+func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) (Node, error) {
 	cnt := builder.count()
 	if cnt != 1 {
-		return nil, fmt.Errorf("invalid count")
+		return Node{}, fmt.Errorf("invalid count")
 	}
 	nd := builder.build()
 	childAddr := nd.getAddress(0)
@@ -276,7 +276,7 @@ func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) 
 	for {
 		child, err := ns.Read(ctx, childAddr)
 		if err != nil {
-			return nil, err
+			return Node{}, err
 		}
 
 		if child.IsLeaf() || child.Count() > 1 {

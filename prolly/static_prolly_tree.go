@@ -3,6 +3,7 @@ package prolly
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"ptree-bs/prolly/tree"
 )
@@ -12,7 +13,7 @@ var (
 )
 
 type StaticTree struct {
-	root *tree.Node
+	root tree.Node
 	ns   *tree.NodeStore
 }
 
@@ -22,7 +23,7 @@ func DefaultBytesCompare(left, right []byte) int {
 
 // searchNode returns the smallest index where nd[i] >= query
 // Adapted from search.Sort to inline comparison.
-func searchNode(query []byte, nd *tree.Node) int {
+func searchNode(query []byte, nd tree.Node) int {
 	n := int(nd.Count())
 	// Define f(-1) == false and f(n) == true.
 	// Invariant: f(i-1) == false, f(j) == true.
@@ -42,15 +43,32 @@ func searchNode(query []byte, nd *tree.Node) int {
 	return i
 }
 
-func NewStaticProllyTree(node *tree.Node, ns *tree.NodeStore) *StaticTree {
+func NewStaticProllyTree(node tree.Node, ns *tree.NodeStore) *StaticTree {
 	return &StaticTree{
 		root: node,
 		ns:   ns,
 	}
 }
 
-func (st *StaticTree) Mutate() *MutableProllyTree {
+func (st *StaticTree) Mutate() *MutableTree {
 	return NewMutableProllyTree(st)
+}
+
+func (st *StaticTree) Count() int {
+	return st.root.TreeCount()
+}
+
+func (st *StaticTree) Copy() StaticTree {
+	rootBytes, err := json.Marshal(st.root)
+	if err != nil {
+		panic(err)
+	}
+	_st := StaticTree{ns: st.ns}
+	err = json.Unmarshal(rootBytes, &_st.root)
+	if err != nil {
+		panic(err)
+	}
+	return _st
 }
 
 func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
