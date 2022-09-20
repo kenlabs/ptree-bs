@@ -120,8 +120,12 @@ func (cur *Cursor) Valid() bool {
 		cur.idx < cur.nd.Count()
 }
 
-func (cur *Cursor) invalidate() {
+func (cur *Cursor) invalidateAtEnd() {
 	cur.idx = cur.nd.Count()
+}
+
+func (cur *Cursor) invalidateAtStart() {
+	cur.idx = -1
 }
 
 func (cur *Cursor) hasNext() bool {
@@ -152,7 +156,7 @@ func (cur *Cursor) Advance(ctx context.Context) error {
 	}
 
 	if cur.parent == nil {
-		cur.invalidate()
+		cur.invalidateAtEnd()
 		return nil
 	}
 
@@ -162,7 +166,7 @@ func (cur *Cursor) Advance(ctx context.Context) error {
 	}
 
 	if cur.parent.OutOfBounds() {
-		cur.invalidate()
+		cur.invalidateAtEnd()
 		return nil
 	}
 
@@ -274,6 +278,74 @@ func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byt
 		}
 
 		cur.idx = search(item, cur.nd)
+	}
+
+	return cur, nil
+}
+
+func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error) {
+	cur := &Cursor{nd: nd, ns: ns}
+	var leaf bool
+	var err error
+	leaf = cur.isLeaf()
+	if err != nil {
+		return nil, err
+	}
+	for !leaf {
+		nd, err = ns.Read(ctx, cur.CurrentRef())
+		if err != nil {
+			return nil, err
+		}
+
+		parent := cur
+		cur = &Cursor{nd: nd, parent: parent, ns: ns}
+		leaf = cur.isLeaf()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cur, nil
+}
+
+func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error) {
+	cur := &Cursor{nd: nd, ns: ns}
+	cur.skipToNodeEnd()
+
+	var leaf bool
+	var err error
+	leaf = cur.isLeaf()
+	if err != nil {
+		return nil, err
+	}
+	for !leaf {
+		nd, err = ns.Read(ctx, cur.CurrentRef())
+		if err != nil {
+			return nil, err
+		}
+
+		parent := cur
+		cur = &Cursor{nd: nd, parent: parent, ns: ns}
+		cur.skipToNodeEnd()
+		leaf = cur.isLeaf()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cur, nil
+}
+
+func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error) {
+	cur, err := NewCursorAtEnd(ctx, ns, nd)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cur.Advance(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if cur.idx != cur.nd.Count() {
+		panic("invalid cursor index")
 	}
 
 	return cur, nil

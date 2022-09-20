@@ -334,7 +334,7 @@ func (c *Chunker) AdvanceTo(ctx context.Context, next *Cursor) error {
 	if err != nil {
 		return err
 	}
-	c.cur.invalidate()
+	c.cur.invalidateAtEnd()
 
 	err = c.parent.AdvanceTo(ctx, next.parent)
 	if err != nil {
