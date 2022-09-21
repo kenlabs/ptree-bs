@@ -1,4 +1,4 @@
-package prolly
+package tree
 
 import (
 	"math/rand"

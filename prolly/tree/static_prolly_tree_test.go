@@ -1,4 +1,4 @@
-package prolly
+package tree
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/zeebo/assert"
 	"math/rand"
-	"ptree-bs/prolly/tree"
 	"testing"
 )
 
-func newTestNodeStore() *tree.NodeStore {
+func newTestNodeStore() *NodeStore {
 	ds := datastore.NewMapDatastore()
 	bs := blockstore.NewBlockstore(ds)
-	ns := tree.NewNodeStore(bs)
+	ns := NewNodeStore(bs)
 	return ns
 }
 
@@ -22,7 +21,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	ns := newTestNodeStore()
 	testdata := RandomTuplePairs(100000)
 
-	ck, err := tree.NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
 	for _, pair := range testdata {
 		err = ck.AddPair(ctx, pair[0], pair[1])

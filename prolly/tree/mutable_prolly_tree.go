@@ -1,10 +1,9 @@
-package prolly
+package tree
 
 import (
 	"context"
 	"github.com/ipfs/go-log/v2"
 	"ptree-bs/prolly/skip"
-	"ptree-bs/prolly/tree"
 )
 
 var mplog = log.Logger("mutableTree")
@@ -15,11 +14,11 @@ type MutableTree struct {
 }
 
 func NewMutableProllyTree(st *StaticTree) *MutableTree {
-	_root := st.root
-	_ns := st.ns
+	_root := st.Root
+	_ns := st.Ns
 	newSt := StaticTree{
-		root: _root,
-		ns:   _ns,
+		Root: _root,
+		Ns:   _ns,
 	}
 	return &MutableTree{
 		edits: skip.NewSkipList(func(left, right []byte) int {
@@ -35,14 +34,14 @@ func (mp *MutableTree) Tree(ctx context.Context) (StaticTree, error) {
 	}
 	tr := mp.tree.Copy()
 
-	root, err := tree.ApplyMutations(ctx, tr.ns, tr.root, mp.mutations(), DefaultBytesCompare)
+	root, err := ApplyMutations(ctx, tr.Ns, tr.Root, mp.mutations(), DefaultBytesCompare)
 	if err != nil {
 		return StaticTree{}, err
 	}
 
 	return StaticTree{
-		root: root,
-		ns:   tr.ns,
+		Root: root,
+		Ns:   tr.Ns,
 	}, nil
 
 }
@@ -82,6 +81,6 @@ func (mp *MutableTree) ApplyPending(ctx context.Context) error {
 	return nil
 }
 
-func (mp *MutableTree) mutations() *tree.MutationIter {
-	return &tree.MutationIter{Iter: mp.edits.IterAtStart()}
+func (mp *MutableTree) mutations() MutationIter {
+	return &OrderedListIter{Iter: mp.edits.IterAtStart()}
 }

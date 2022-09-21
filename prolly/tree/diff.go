@@ -37,7 +37,9 @@ func (df *Differ) Next(ctx context.Context) (Diff, error) {
 		switch {
 		case cmp < 0:
 			// todo: we only add or update the prolly tree now
-			continue
+			if err = df.base.Advance(ctx); err != nil {
+				return Diff{}, err
+			}
 		case cmp > 0:
 			return sendAdded(ctx, df.new)
 		case cmp == 0:

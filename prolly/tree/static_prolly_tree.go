@@ -1,11 +1,10 @@
-package prolly
+package tree
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"ptree-bs/prolly/tree"
 )
 
 var (
@@ -13,8 +12,8 @@ var (
 )
 
 type StaticTree struct {
-	root tree.Node
-	ns   *tree.NodeStore
+	Root Node
+	Ns   *NodeStore
 }
 
 func DefaultBytesCompare(left, right []byte) int {
@@ -23,7 +22,7 @@ func DefaultBytesCompare(left, right []byte) int {
 
 // searchNode returns the smallest index where nd[i] >= query
 // Adapted from search.Sort to inline comparison.
-func searchNode(query []byte, nd tree.Node) int {
+func searchNode(query []byte, nd Node) int {
 	n := int(nd.Count())
 	// Define f(-1) == false and f(n) == true.
 	// Invariant: f(i-1) == false, f(j) == true.
@@ -43,10 +42,10 @@ func searchNode(query []byte, nd tree.Node) int {
 	return i
 }
 
-func NewStaticProllyTree(node tree.Node, ns *tree.NodeStore) *StaticTree {
+func NewStaticProllyTree(node Node, ns *NodeStore) *StaticTree {
 	return &StaticTree{
-		root: node,
-		ns:   ns,
+		Root: node,
+		Ns:   ns,
 	}
 }
 
@@ -55,16 +54,16 @@ func (st *StaticTree) Mutate() *MutableTree {
 }
 
 func (st *StaticTree) Count() int {
-	return st.root.TreeCount()
+	return st.Root.TreeCount()
 }
 
 func (st *StaticTree) Copy() StaticTree {
-	rootBytes, err := json.Marshal(st.root)
+	rootBytes, err := json.Marshal(st.Root)
 	if err != nil {
 		panic(err)
 	}
-	_st := StaticTree{ns: st.ns}
-	err = json.Unmarshal(rootBytes, &_st.root)
+	_st := StaticTree{Ns: st.Ns}
+	err = json.Unmarshal(rootBytes, &_st.Root)
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +71,7 @@ func (st *StaticTree) Copy() StaticTree {
 }
 
 func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
-	cur, err := tree.NewLeafCursorAtItem(ctx, st.ns, st.root, key, searchNode)
+	cur, err := NewLeafCursorAtItem(ctx, st.Ns, st.Root, key, searchNode)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +92,7 @@ func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
 }
 
 func (st *StaticTree) Has(ctx context.Context, key []byte) (bool, error) {
-	cur, err := tree.NewLeafCursorAtItem(ctx, st.ns, st.root, key, searchNode)
+	cur, err := NewLeafCursorAtItem(ctx, st.Ns, st.Root, key, searchNode)
 	if err != nil {
 		return false, err
 	}

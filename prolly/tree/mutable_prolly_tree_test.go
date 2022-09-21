@@ -1,11 +1,10 @@
-package prolly
+package tree
 
 import (
 	"context"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
-	"ptree-bs/prolly/tree"
 	"testing"
 )
 
@@ -19,7 +18,7 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := tree.NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
 
 	for _, pair := range data {
@@ -68,7 +67,7 @@ func TestMPW(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := tree.NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
 
 	for _, pair := range data {
@@ -88,8 +87,8 @@ func TestMPW(t *testing.T) {
 
 	var st StaticTree
 
-	t.Log(bytesToCid(originPTree.root.Values[0]))
-	t.Logf("%p\n", &originPTree.root)
+	t.Log(bytesToCid(originPTree.Root.Values[0]))
+	t.Logf("%p\n", &originPTree.Root)
 
 	t.Log(originPTree.Count())
 	mut := originPTree.Mutate()
@@ -100,8 +99,8 @@ func TestMPW(t *testing.T) {
 	st, err = mut.Tree(ctx)
 	assert.NoError(t, err)
 
-	t.Log(bytesToCid(originPTree.root.Values[0]))
-	t.Logf("%p\n", &originPTree.root)
+	t.Log(bytesToCid(originPTree.Root.Values[0]))
+	t.Logf("%p\n", &originPTree.Root)
 
 	assert.Equal(t, len(data)+1, st.Count())
 
@@ -122,8 +121,8 @@ func TestMPW(t *testing.T) {
 	st, err = mut.Tree(ctx)
 	assert.NoError(t, err)
 
-	t.Log(bytesToCid(originPTree.root.Values[0]))
-	t.Logf("%p\n", &originPTree.root)
+	t.Log(bytesToCid(originPTree.Root.Values[0]))
+	t.Logf("%p\n", &originPTree.Root)
 
 	assert.Equal(t, len(data)+1, st.Count())
 

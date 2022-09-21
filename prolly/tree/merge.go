@@ -2,27 +2,121 @@ package tree
 
 import (
 	"context"
-	"ptree-bs/prolly"
+	"golang.org/x/sync/errgroup"
+	"io"
+	//"ptree-bs/prolly"
 )
 
-func MergeStaticTrees(ctx context.Context, base *prolly.StaticTree, new *prolly.StaticTree) (prolly.StaticTree, error) {
-	root, err := Merge(ctx, base.ns, base.root, new.root)
+type patchBuffer struct {
+	buf chan patch
+}
+
+type patch [2][]byte
+
+var _ MutationIter = patchBuffer{}
+
+func newPatchBuffer(sz int) patchBuffer {
+	return patchBuffer{buf: make(chan patch, sz)}
+}
+
+func (pb patchBuffer) sendPatch(ctx context.Context, diff Diff) error {
+	p := patch{diff.Key, diff.To}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case pb.buf <- p:
+		return nil
+	}
+}
+
+// NextMutation implements MutationIter.
+func (pb patchBuffer) NextMutation(ctx context.Context) ([]byte, []byte) {
+	var p patch
+	select {
+	case p = <-pb.buf:
+		return p[0], p[1]
+	case <-ctx.Done():
+		return nil, nil
+	}
+}
+
+func (pb patchBuffer) Close() error {
+	close(pb.buf)
+	return nil
+}
+
+func sendPatches(ctx context.Context, differ Differ, buf patchBuffer) error {
+	var end bool
+	var err error
+	patch, err := differ.Next(ctx)
+	if err == io.EOF {
+		err, end = nil, true
+	}
 	if err != nil {
-		return prolly.StaticTree{}, err
+		return err
 	}
 
-	return prolly.StaticTree{
-		root: root,
-		ns:   base.ns,
+	for !end {
+		err = buf.sendPatch(ctx, patch)
+		if err != nil {
+			return err
+		}
+
+		patch, err = differ.Next(ctx)
+		if err == io.EOF {
+			err, end = nil, true
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (StaticTree, error) {
+	root, err := Merge(ctx, base.Ns, base.Root, new.Root, DefaultBytesCompare)
+	if err != nil {
+		return StaticTree{}, err
+	}
+
+	return StaticTree{
+		Root: root,
+		Ns:   base.Ns,
 	}, nil
 }
 
 func Merge(ctx context.Context, ns *NodeStore, base Node, new Node, order CompareFn) (Node, error) {
+	var result Node
+
 	df, err := DifferFromRoots(ctx, ns, base, new, order)
 	if err != nil {
 		return Node{}, err
 	}
 
+	eg, ctx := errgroup.WithContext(ctx)
+	patches := newPatchBuffer(1024)
+
+	eg.Go(func() (err error) {
+		defer func() {
+			if cerr := patches.Close(); err == nil {
+				err = cerr
+			}
+		}()
+		err = sendPatches(ctx, df, patches)
+		return
+	})
+
+	eg.Go(func() error {
+		result, err = ApplyMutations(ctx, ns, base, patches, DefaultBytesCompare)
+		return err
+	})
+
+	if err = eg.Wait(); err != nil {
+		return Node{}, err
+	}
+
+	return result, nil
 }
 
 func DifferFromRoots(ctx context.Context, ns *NodeStore, base, new Node, order CompareFn) (Differ, error) {

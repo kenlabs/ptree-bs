@@ -6,11 +6,16 @@ import (
 	"ptree-bs/prolly/skip"
 )
 
-type MutationIter struct {
+type MutationIter interface {
+	NextMutation(ctx context.Context) (key, value []byte)
+	Close() error
+}
+
+type OrderedListIter struct {
 	Iter *skip.ListIter
 }
 
-func (it *MutationIter) NextMutation(context.Context) ([]byte, []byte) {
+func (it *OrderedListIter) NextMutation(context.Context) ([]byte, []byte) {
 	k, v := it.Iter.Current()
 	if k == nil {
 		return nil, nil
@@ -19,11 +24,11 @@ func (it *MutationIter) NextMutation(context.Context) ([]byte, []byte) {
 	return k, v
 }
 
-func (it *MutationIter) Close() error {
+func (it *OrderedListIter) Close() error {
 	return nil
 }
 
-func ApplyMutations(ctx context.Context, ns *NodeStore, root Node, edits *MutationIter, compare CompareFn) (Node, error) {
+func ApplyMutations(ctx context.Context, ns *NodeStore, root Node, edits MutationIter, compare CompareFn) (Node, error) {
 	newKey, newValue := edits.NextMutation(ctx)
 	if newKey == nil {
 		// no update
