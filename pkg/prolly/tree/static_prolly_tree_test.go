@@ -29,7 +29,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	}
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
-	t.Log(root)
+	//t.Log(root)
 
 	st := NewStaticProllyTree(root, ns)
 

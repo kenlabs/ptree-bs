@@ -6,12 +6,12 @@ import (
 	"sort"
 )
 
-type ItemSearchFn func(item []byte, nd Node) (idx int)
+type ItemSearchFn func(item []byte, nd ProllyNode) (idx int)
 
 type CompareFn func(left, right []byte) int
 
 type Cursor struct {
-	nd       Node
+	nd       ProllyNode
 	idx      int
 	parent   *Cursor
 	subtrees []uint64
@@ -41,7 +41,7 @@ func (cur *Cursor) CurrentSubtreeSize() uint64 {
 }
 
 func (cur *Cursor) atNodeEnd() bool {
-	lastKeyIdx := cur.nd.Count() - 1
+	lastKeyIdx := cur.nd.ItemCount() - 1
 	return cur.idx == lastKeyIdx
 }
 
@@ -79,7 +79,7 @@ func (cur *Cursor) seek(ctx context.Context, key []byte, cp CompareFn) error {
 }
 
 func (cur *Cursor) search(item []byte, cp CompareFn) int {
-	idx := sort.Search(cur.nd.Count(), func(i int) bool {
+	idx := sort.Search(cur.nd.ItemCount(), func(i int) bool {
 		return cp(item, cur.nd.GetKey(i)) <= 0
 	})
 
@@ -91,7 +91,7 @@ func (cur *Cursor) firstKey() []byte {
 }
 
 func (cur *Cursor) lastKey() []byte {
-	lastKeyIdx := cur.nd.Count() - 1
+	lastKeyIdx := cur.nd.ItemCount() - 1
 	return cur.nd.GetKey(lastKeyIdx)
 }
 
@@ -100,7 +100,7 @@ func (cur *Cursor) skipToNodeStart() {
 }
 
 func (cur *Cursor) skipToNodeEnd() {
-	lastKeyIdx := cur.nd.Count() - 1
+	lastKeyIdx := cur.nd.ItemCount() - 1
 	cur.idx = lastKeyIdx
 }
 
@@ -108,20 +108,20 @@ func (cur *Cursor) keepInBounds() {
 	if cur.idx < 0 {
 		cur.skipToNodeStart()
 	}
-	lastKeyIdx := cur.nd.Count() - 1
+	lastKeyIdx := cur.nd.ItemCount() - 1
 	if cur.idx > lastKeyIdx {
 		cur.skipToNodeEnd()
 	}
 }
 
 func (cur *Cursor) Valid() bool {
-	return cur.nd.Count() != 0 &&
+	return cur.nd.ItemCount() != 0 &&
 		cur.idx >= 0 &&
-		cur.idx < cur.nd.Count()
+		cur.idx < cur.nd.ItemCount()
 }
 
 func (cur *Cursor) invalidateAtEnd() {
-	cur.idx = cur.nd.Count()
+	cur.idx = cur.nd.ItemCount()
 }
 
 func (cur *Cursor) invalidateAtStart() {
@@ -129,11 +129,11 @@ func (cur *Cursor) invalidateAtStart() {
 }
 
 func (cur *Cursor) hasNext() bool {
-	return cur.idx < cur.nd.Count()-1
+	return cur.idx < cur.nd.ItemCount()-1
 }
 
 func (cur *Cursor) OutOfBounds() bool {
-	return cur.idx < 0 || cur.idx >= cur.nd.Count()
+	return cur.idx < 0 || cur.idx >= cur.nd.ItemCount()
 }
 
 func (cur *Cursor) fetchNode(ctx context.Context) error {
@@ -232,15 +232,15 @@ func (cur *Cursor) copy(other *Cursor) {
 	}
 }
 
-func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n Node, item []byte, compare CompareFn) (*Cursor, error) {
-	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd Node) (idx int) {
-		return sort.Search(nd.Count(), func(i int) bool {
+func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n ProllyNode, item []byte, compare CompareFn) (*Cursor, error) {
+	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd ProllyNode) (idx int) {
+		return sort.Search(nd.ItemCount(), func(i int) bool {
 			return compare(item, nd.GetKey(i)) <= 0
 		})
 	})
 }
 
-func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 
 	cur.idx = search(item, cur.nd)
@@ -263,7 +263,7 @@ func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byte, s
 	return cur, nil
 }
 
-func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, parent: nil, ns: ns}
 
 	cur.idx = search(item, cur.nd)
@@ -283,7 +283,7 @@ func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd Node, item []byt
 	return cur, nil
 }
 
-func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error) {
+func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 	var leaf bool
 	var err error
@@ -307,7 +307,7 @@ func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, err
 	return cur, nil
 }
 
-func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error) {
+func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 	cur.skipToNodeEnd()
 
@@ -334,7 +334,7 @@ func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error
 	return cur, nil
 }
 
-func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, error) {
+func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor, error) {
 	cur, err := NewCursorAtEnd(ctx, ns, nd)
 	if err != nil {
 		return nil, err
@@ -344,7 +344,7 @@ func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd Node) (*Cursor, err
 	if err != nil {
 		return nil, err
 	}
-	if cur.idx != cur.nd.Count() {
+	if cur.idx != cur.nd.ItemCount() {
 		panic("invalid cursor index")
 	}
 

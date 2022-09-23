@@ -3,11 +3,13 @@ package tree
 import (
 	"context"
 	"github.com/ipfs/go-cid"
+	"github.com/ipld/go-ipld-prime"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	"sync"
 )
 
 type novelNode struct {
-	node      Node
+	node      ProllyNode
 	addr      cid.Cid
 	lastKey   []byte
 	treeCount uint64
@@ -47,20 +49,47 @@ func (nb *nodeBuilder) count() int {
 	return len(nb.keys)
 }
 
-func (nb *nodeBuilder) build() (node Node) {
+func (nb *nodeBuilder) build() (node ProllyNode) {
 	_keys := make([][]byte, len(nb.keys))
-	_vals := make([][]byte, len(nb.values))
 	_subtrees := make([]uint64, len(nb.subtrees))
 	copy(_keys, nb.keys)
-	copy(_vals, nb.values)
 	copy(_subtrees, nb.subtrees)
-	n := Node{
-		Keys:     _keys,
-		Values:   _vals,
-		Size:     nb.size,
-		Level:    nb.level,
-		Subtrees: _subtrees,
+	n := ProllyNode{
+		Keys:       _keys,
+		Values:     nil,
+		Links:      nil,
+		Size:       nb.size,
+		Level:      nb.level,
+		Count:      uint16(len(nb.keys)),
+		Subtrees:   _subtrees,
+		Totalcount: sumSubtrees(_subtrees),
 	}
+	if nb.level == 0 {
+		_vals := make([][]byte, len(nb.values))
+		copy(_vals, nb.values)
+		n.Values = _vals
+	} else {
+		lnks := make([]*ipld.Link, len(nb.values))
+		for i, cidBytes := range nb.values {
+			n, c, err := cid.CidFromBytes(cidBytes)
+			if err != nil {
+				panic(err.Error())
+			}
+			if n != CidBytesLen {
+				panic("wrong cid bytes length")
+			}
+			var lnk ipld.Link = cidlink.Link{Cid: c}
+			lnks[i] = &lnk
+		}
+		n.Links = lnks
+	}
+	//Node{
+	//	Keys:     _keys,
+	//	Values:   _vals,
+	//	Size:     nb.size,
+	//	Level:    nb.level,
+	//	Subtrees: _subtrees,
+	//}
 
 	nb.recycleBuffers()
 	nb.size = 0
@@ -85,8 +114,8 @@ func writeNewNode(ctx context.Context, ns *NodeStore, nb *nodeBuilder) (*novelNo
 	}
 
 	var lastKey []byte
-	if node.Count() > 0 {
-		k := node.GetKey(node.Count() - 1)
+	if node.ItemCount() > 0 {
+		k := node.GetKey(node.ItemCount() - 1)
 		lastKey = make([]byte, len(k))
 		copy(lastKey, k)
 	}

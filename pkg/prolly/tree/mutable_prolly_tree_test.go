@@ -87,7 +87,7 @@ func TestMPW(t *testing.T) {
 
 	var st StaticTree
 
-	t.Log(bytesToCid(originPTree.Root.Values[0]))
+	t.Log(bytesToCid(originPTree.Root.getValue(0)))
 	t.Logf("%p\n", &originPTree.Root)
 
 	t.Log(originPTree.Count())
@@ -99,7 +99,7 @@ func TestMPW(t *testing.T) {
 	st, err = mut.Tree(ctx)
 	assert.NoError(t, err)
 
-	t.Log(bytesToCid(originPTree.Root.Values[0]))
+	t.Log(bytesToCid(originPTree.Root.getValue(0)))
 	t.Logf("%p\n", &originPTree.Root)
 
 	assert.Equal(t, len(data)+1, st.Count())
@@ -121,7 +121,7 @@ func TestMPW(t *testing.T) {
 	st, err = mut.Tree(ctx)
 	assert.NoError(t, err)
 
-	t.Log(bytesToCid(originPTree.Root.Values[0]))
+	t.Log(bytesToCid(originPTree.Root.getValue(0)))
 	t.Logf("%p\n", &originPTree.Root)
 
 	assert.Equal(t, len(data)+1, st.Count())

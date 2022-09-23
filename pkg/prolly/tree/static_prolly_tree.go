@@ -12,7 +12,7 @@ var (
 )
 
 type StaticTree struct {
-	Root Node
+	Root ProllyNode
 	Ns   *NodeStore
 }
 
@@ -22,8 +22,8 @@ func DefaultBytesCompare(left, right []byte) int {
 
 // searchNode returns the smallest index where nd[i] >= query
 // Adapted from search.Sort to inline comparison.
-func searchNode(query []byte, nd Node) int {
-	n := int(nd.Count())
+func searchNode(query []byte, nd ProllyNode) int {
+	n := int(nd.ItemCount())
 	// Define f(-1) == false and f(n) == true.
 	// Invariant: f(i-1) == false, f(j) == true.
 	i, j := 0, n
@@ -42,7 +42,7 @@ func searchNode(query []byte, nd Node) int {
 	return i
 }
 
-func NewStaticProllyTree(node Node, ns *NodeStore) *StaticTree {
+func NewStaticProllyTree(node ProllyNode, ns *NodeStore) *StaticTree {
 	return &StaticTree{
 		Root: node,
 		Ns:   ns,

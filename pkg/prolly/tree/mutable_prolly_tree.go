@@ -3,7 +3,7 @@ package tree
 import (
 	"context"
 	"github.com/ipfs/go-log/v2"
-	"ptree-bs/prolly/skip"
+	"ptree-bs/pkg/prolly/skip"
 )
 
 var mplog = log.Logger("mutableTree")
@@ -32,7 +32,8 @@ func (mp *MutableTree) Tree(ctx context.Context) (StaticTree, error) {
 	if err := mp.ApplyPending(ctx); err != nil {
 		return StaticTree{}, err
 	}
-	tr := mp.tree.Copy()
+	//tr := mp.tree.Copy()
+	tr := mp.tree
 
 	root, err := ApplyMutations(ctx, tr.Ns, tr.Root, mp.mutations(), DefaultBytesCompare)
 	if err != nil {

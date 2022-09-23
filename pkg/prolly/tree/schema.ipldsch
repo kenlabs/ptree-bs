@@ -1,0 +1,12 @@
+type ProllyNode struct {
+	Keys [Bytes]
+	Values nullable [Bytes]
+	Links nullable [Link_ProllyNode]
+	Size Int
+	Level Int
+	Count Int
+	Subtrees [Int]
+	Totalcount Int
+}
+
+type Link_ProllyNode &ProllyNode

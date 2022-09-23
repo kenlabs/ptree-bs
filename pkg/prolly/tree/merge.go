@@ -86,12 +86,12 @@ func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (S
 	}, nil
 }
 
-func Merge(ctx context.Context, ns *NodeStore, base Node, new Node, order CompareFn) (Node, error) {
-	var result Node
+func Merge(ctx context.Context, ns *NodeStore, base ProllyNode, new ProllyNode, order CompareFn) (ProllyNode, error) {
+	var result ProllyNode
 
 	df, err := DifferFromRoots(ctx, ns, base, new, order)
 	if err != nil {
-		return Node{}, err
+		return ProllyNode{}, err
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -113,13 +113,13 @@ func Merge(ctx context.Context, ns *NodeStore, base Node, new Node, order Compar
 	})
 
 	if err = eg.Wait(); err != nil {
-		return Node{}, err
+		return ProllyNode{}, err
 	}
 
 	return result, nil
 }
 
-func DifferFromRoots(ctx context.Context, ns *NodeStore, base, new Node, order CompareFn) (Differ, error) {
+func DifferFromRoots(ctx context.Context, ns *NodeStore, base, new ProllyNode, order CompareFn) (Differ, error) {
 	bc, err := NewCursorAtStart(ctx, ns, base)
 	if err != nil {
 		return Differ{}, err
