@@ -32,14 +32,7 @@ func MkLinkSystem(bs blockstore.Blockstore) ipld.LinkSystem {
 		buf := bytes.NewBuffer(nil)
 		return buf, func(lnk ipld.Link) error {
 			c := lnk.(cidlink.Link).Cid
-			//codec := lnk.(cidlink.Link).Prefix().Codec
 			origBuf := buf.Bytes()
-
-			//// Decode the node to check its type.
-			//_, err := decodeIPLDNode(codec, buf, tree.IPLDNodePrototype)
-			//if err != nil {
-			//	return fmt.Errorf("error decoding IPLD node in linksystem, err: %v", err)
-			//}
 
 			block, err := blocks.NewBlockWithCid(origBuf, c)
 			if err != nil {

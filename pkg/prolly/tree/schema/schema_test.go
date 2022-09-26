@@ -1,4 +1,4 @@
-package tree
+package schema
 
 import (
 	"github.com/ipld/go-ipld-prime"
@@ -29,7 +29,7 @@ func TestGenIPLDNode(t *testing.T) {
 
 	t.Log(nd.Keys)
 	t.Log(nd.Values)
-	t.Log(nd.getAddress(0))
+	t.Log(nd.GetAddress(0))
 	t.Log(string(nd.GetKey(0)))
 	t.Log(nd.Totalcount)
 }

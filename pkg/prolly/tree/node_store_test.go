@@ -8,6 +8,7 @@ import (
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	_ "github.com/multiformats/go-multicodec"
 	"github.com/zeebo/assert"
+	"ptree-bs/pkg/prolly/tree/schema"
 
 	"testing"
 )
@@ -33,12 +34,12 @@ import (
 //}
 
 func TestIPLDNodeStoreLoad(t *testing.T) {
-	c1, err := LinkProto.Sum([]byte("link1"))
+	c1, err := schema.LinkProto.Sum([]byte("link1"))
 	assert.NoError(t, err)
 	var lnk1 ipld.Link
 	lnk1 = cidlink.Link{Cid: c1}
 
-	nd := &ProllyNode{
+	nd := &schema.ProllyNode{
 		Keys:       [][]byte{[]byte("123k")},
 		Values:     [][]byte{[]byte("123v")},
 		Links:      []*ipld.Link{&lnk1},

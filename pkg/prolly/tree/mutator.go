@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"ptree-bs/pkg/prolly/skip"
+	"ptree-bs/pkg/prolly/tree/config"
+	"ptree-bs/pkg/prolly/tree/schema"
 )
 
 type MutationIter interface {
@@ -28,7 +30,7 @@ func (it *OrderedListIter) Close() error {
 	return nil
 }
 
-func ApplyMutations(ctx context.Context, ns *NodeStore, root ProllyNode, edits MutationIter, compare CompareFn) (ProllyNode, error) {
+func ApplyMutations(ctx context.Context, ns *NodeStore, cfg *config.ChunkConfig, root schema.ProllyNode, edits MutationIter, compare CompareFn) (schema.ProllyNode, error) {
 	newKey, newValue := edits.NextMutation(ctx)
 	if newKey == nil {
 		// no update
@@ -37,18 +39,18 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root ProllyNode, edits M
 
 	cur, err := NewCursorFromCompareFn(ctx, ns, root, newKey, compare)
 	if err != nil {
-		return ProllyNode{}, err
+		return schema.ProllyNode{}, err
 	}
 
-	ck, err := newChunker(ctx, cur.Clone(), 0, ns)
+	ck, err := newChunker(ctx, cur.Clone(), 0, ns, cfg)
 	if err != nil {
-		return ProllyNode{}, err
+		return schema.ProllyNode{}, err
 	}
 
 	for newKey != nil {
 		err = cur.seek(ctx, newKey, compare)
 		if err != nil {
-			return ProllyNode{}, err
+			return schema.ProllyNode{}, err
 		}
 
 		var oldValue []byte
@@ -65,7 +67,7 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root ProllyNode, edits M
 
 		err = ck.AdvanceTo(ctx, cur)
 		if err != nil {
-			return ProllyNode{}, err
+			return schema.ProllyNode{}, err
 		}
 
 		if oldValue == nil {
@@ -78,7 +80,7 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root ProllyNode, edits M
 			}
 		}
 		if err != nil {
-			return ProllyNode{}, err
+			return schema.ProllyNode{}, err
 		}
 
 		newKey, newValue = edits.NextMutation(ctx)

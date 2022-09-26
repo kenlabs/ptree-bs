@@ -3,15 +3,16 @@ package tree
 import (
 	"context"
 	"github.com/ipfs/go-cid"
+	"ptree-bs/pkg/prolly/tree/schema"
 	"sort"
 )
 
-type ItemSearchFn func(item []byte, nd ProllyNode) (idx int)
+type ItemSearchFn func(item []byte, nd schema.ProllyNode) (idx int)
 
 type CompareFn func(left, right []byte) int
 
 type Cursor struct {
-	nd       ProllyNode
+	nd       schema.ProllyNode
 	idx      int
 	parent   *Cursor
 	subtrees []uint64
@@ -23,11 +24,11 @@ func (cur *Cursor) CurrentKey() []byte {
 }
 
 func (cur *Cursor) CurrentValue() []byte {
-	return cur.nd.getValue(cur.idx)
+	return cur.nd.GetValue(cur.idx)
 }
 
 func (cur *Cursor) CurrentRef() cid.Cid {
-	return cur.nd.getAddress(cur.idx)
+	return cur.nd.GetAddress(cur.idx)
 }
 
 func (cur *Cursor) CurrentSubtreeSize() uint64 {
@@ -35,7 +36,7 @@ func (cur *Cursor) CurrentSubtreeSize() uint64 {
 		return 1
 	}
 	if cur.subtrees == nil {
-		cur.subtrees = cur.nd.getSubtreeCounts()
+		cur.subtrees = cur.nd.GetSubtreeCounts()
 	}
 	return cur.subtrees[cur.idx]
 }
@@ -232,15 +233,15 @@ func (cur *Cursor) copy(other *Cursor) {
 	}
 }
 
-func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n ProllyNode, item []byte, compare CompareFn) (*Cursor, error) {
-	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd ProllyNode) (idx int) {
+func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n schema.ProllyNode, item []byte, compare CompareFn) (*Cursor, error) {
+	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd schema.ProllyNode) (idx int) {
 		return sort.Search(nd.ItemCount(), func(i int) bool {
 			return compare(item, nd.GetKey(i)) <= 0
 		})
 	})
 }
 
-func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 
 	cur.idx = search(item, cur.nd)
@@ -263,7 +264,7 @@ func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd ProllyNode, item []b
 	return cur, nil
 }
 
-func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, parent: nil, ns: ns}
 
 	cur.idx = search(item, cur.nd)
@@ -283,7 +284,7 @@ func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd ProllyNode, item
 	return cur, nil
 }
 
-func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor, error) {
+func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 	var leaf bool
 	var err error
@@ -307,7 +308,7 @@ func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Curso
 	return cur, nil
 }
 
-func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor, error) {
+func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 	cur.skipToNodeEnd()
 
@@ -334,7 +335,7 @@ func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor,
 	return cur, nil
 }
 
-func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd ProllyNode) (*Cursor, error) {
+func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) (*Cursor, error) {
 	cur, err := NewCursorAtEnd(ctx, ns, nd)
 	if err != nil {
 		return nil, err

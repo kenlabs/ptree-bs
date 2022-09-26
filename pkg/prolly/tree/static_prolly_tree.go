@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"ptree-bs/pkg/prolly/tree/config"
+	"ptree-bs/pkg/prolly/tree/schema"
 )
 
 var (
@@ -12,8 +14,9 @@ var (
 )
 
 type StaticTree struct {
-	Root ProllyNode
-	Ns   *NodeStore
+	Root   schema.ProllyNode
+	Config *config.ChunkConfig
+	Ns     *NodeStore
 }
 
 func DefaultBytesCompare(left, right []byte) int {
@@ -22,7 +25,7 @@ func DefaultBytesCompare(left, right []byte) int {
 
 // searchNode returns the smallest index where nd[i] >= query
 // Adapted from search.Sort to inline comparison.
-func searchNode(query []byte, nd ProllyNode) int {
+func searchNode(query []byte, nd schema.ProllyNode) int {
 	n := int(nd.ItemCount())
 	// Define f(-1) == false and f(n) == true.
 	// Invariant: f(i-1) == false, f(j) == true.
@@ -42,10 +45,14 @@ func searchNode(query []byte, nd ProllyNode) int {
 	return i
 }
 
-func NewStaticProllyTree(node ProllyNode, ns *NodeStore) *StaticTree {
+func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore, cfg *config.ChunkConfig) *StaticTree {
+	if cfg != nil {
+		cfg = config.DefaultChunkConfig()
+	}
 	return &StaticTree{
-		Root: node,
-		Ns:   ns,
+		Root:   node,
+		Ns:     ns,
+		Config: cfg,
 	}
 }
 

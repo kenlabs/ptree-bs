@@ -9,6 +9,7 @@ require (
 	github.com/ipfs/go-ipfs-blockstore v1.2.0
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipld/go-ipld-prime v0.18.0
+	github.com/kch42/buzhash v0.0.0-20160816060738-9bdec3dec7c6
 	github.com/multiformats/go-multicodec v0.5.0
 	github.com/stretchr/testify v1.7.0
 	github.com/zeebo/assert v1.3.0

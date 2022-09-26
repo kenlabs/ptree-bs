@@ -7,20 +7,9 @@ import (
 	"github.com/ipld/go-ipld-prime"
 	_ "github.com/ipld/go-ipld-prime/codec/dagcbor"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
-	"github.com/multiformats/go-multicodec"
 	"ptree-bs/pkg/prolly/tree/linksystem"
+	"ptree-bs/pkg/prolly/tree/schema"
 )
-
-var LinkProto = cidlink.LinkPrototype{
-	Prefix: cid.Prefix{
-		Version:  1,
-		Codec:    uint64(multicodec.DagCbor),
-		MhType:   uint64(multicodec.Sha2_256),
-		MhLength: 16,
-	},
-}
-
-const CidBytesLen = 20
 
 type NodeStore struct {
 	bs   blockstore.Blockstore
@@ -35,12 +24,12 @@ func NewNodeStore(bs blockstore.Blockstore) *NodeStore {
 	}
 }
 
-func (ns *NodeStore) Write(ctx context.Context, nd ProllyNode) (cid.Cid, error) {
+func (ns *NodeStore) Write(ctx context.Context, nd schema.ProllyNode) (cid.Cid, error) {
 	ipldNode, err := nd.ToNode()
 	if err != nil {
 		return cid.Undef, err
 	}
-	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, LinkProto, ipldNode)
+	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, schema.LinkProto, ipldNode)
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -48,14 +37,14 @@ func (ns *NodeStore) Write(ctx context.Context, nd ProllyNode) (cid.Cid, error) 
 	return lnk.(cidlink.Link).Cid, nil
 }
 
-func (ns *NodeStore) Read(ctx context.Context, c cid.Cid) (ProllyNode, error) {
-	nd, err := ns.lsys.Load(ipld.LinkContext{Ctx: ctx}, cidlink.Link{Cid: c}, ProllyNodePrototype)
+func (ns *NodeStore) Read(ctx context.Context, c cid.Cid) (schema.ProllyNode, error) {
+	nd, err := ns.lsys.Load(ipld.LinkContext{Ctx: ctx}, cidlink.Link{Cid: c}, schema.ProllyNodePrototype)
 	if err != nil {
-		return ProllyNode{}, err
+		return schema.ProllyNode{}, err
 	}
-	inode, err := UnwrapProllyNode(nd)
+	inode, err := schema.UnwrapProllyNode(nd)
 	if err != nil {
-		return ProllyNode{}, err
+		return schema.ProllyNode{}, err
 	}
 
 	return *inode, nil

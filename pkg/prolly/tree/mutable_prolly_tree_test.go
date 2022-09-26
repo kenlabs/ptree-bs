@@ -5,6 +5,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
+	"ptree-bs/pkg/prolly/tree/config"
 	"testing"
 )
 
@@ -18,7 +19,13 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	cfg := &config.ChunkConfig{
+		MinChunkSize: config.DefaultMinChunkSize,
+		MaxChunkSize: config.DefaultMaxChunkSize,
+		Strategy:     config.RollingHash,
+	}
+
+	ck, err := NewEmptyChunker(ctx, ns, cfg)
 	assert.NoError(t, err)
 
 	for _, pair := range data {
@@ -29,7 +36,7 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	originPTree := NewStaticProllyTree(root, ns)
+	originPTree := NewStaticProllyTree(root, ns, cfg)
 
 	inserts := make([][2][]byte, len(data))
 	for i := range data {
@@ -67,7 +74,7 @@ func TestMPW(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, nil)
 	assert.NoError(t, err)
 
 	for _, pair := range data {
@@ -78,7 +85,7 @@ func TestMPW(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	originPTree := NewStaticProllyTree(root, ns)
+	originPTree := NewStaticProllyTree(root, ns, nil)
 	inserts := make([][2][]byte, 2)
 	for i := 0; i < 2; i++ {
 		inserts[i][0] = []byte(string(rune(i*2 + 1)))
@@ -87,7 +94,7 @@ func TestMPW(t *testing.T) {
 
 	var st StaticTree
 
-	t.Log(bytesToCid(originPTree.Root.getValue(0)))
+	t.Log(bytesToCid(originPTree.Root.GetValue(0)))
 	t.Logf("%p\n", &originPTree.Root)
 
 	t.Log(originPTree.Count())
@@ -99,7 +106,7 @@ func TestMPW(t *testing.T) {
 	st, err = mut.Tree(ctx)
 	assert.NoError(t, err)
 
-	t.Log(bytesToCid(originPTree.Root.getValue(0)))
+	t.Log(bytesToCid(originPTree.Root.GetValue(0)))
 	t.Logf("%p\n", &originPTree.Root)
 
 	assert.Equal(t, len(data)+1, st.Count())
@@ -121,7 +128,7 @@ func TestMPW(t *testing.T) {
 	st, err = mut.Tree(ctx)
 	assert.NoError(t, err)
 
-	t.Log(bytesToCid(originPTree.Root.getValue(0)))
+	t.Log(bytesToCid(originPTree.Root.GetValue(0)))
 	t.Logf("%p\n", &originPTree.Root)
 
 	assert.Equal(t, len(data)+1, st.Count())

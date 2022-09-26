@@ -5,11 +5,12 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-ipld-prime"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	"ptree-bs/pkg/prolly/tree/schema"
 	"sync"
 )
 
 type novelNode struct {
-	node      ProllyNode
+	node      schema.ProllyNode
 	addr      cid.Cid
 	lastKey   []byte
 	treeCount uint64
@@ -30,7 +31,7 @@ func newNodeBuilder(level int) *nodeBuilder {
 
 func (nb *nodeBuilder) hasCapacity(key, value []byte) bool {
 	sum := nb.size + len(key) + len(value)
-	return sum <= int(MaxNodeSize)
+	return sum <= int(schema.MaxNodeSize)
 }
 
 func (nb *nodeBuilder) addItems(key, value []byte, subtree uint64) {
@@ -49,12 +50,12 @@ func (nb *nodeBuilder) count() int {
 	return len(nb.keys)
 }
 
-func (nb *nodeBuilder) build() (node ProllyNode) {
+func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 	_keys := make([][]byte, len(nb.keys))
 	_subtrees := make([]uint64, len(nb.subtrees))
 	copy(_keys, nb.keys)
 	copy(_subtrees, nb.subtrees)
-	n := ProllyNode{
+	n := schema.ProllyNode{
 		Keys:       _keys,
 		Values:     nil,
 		Links:      nil,
@@ -62,7 +63,7 @@ func (nb *nodeBuilder) build() (node ProllyNode) {
 		Level:      nb.level,
 		Count:      uint16(len(nb.keys)),
 		Subtrees:   _subtrees,
-		Totalcount: sumSubtrees(_subtrees),
+		Totalcount: schema.SumSubtrees(_subtrees),
 	}
 	if nb.level == 0 {
 		_vals := make([][]byte, len(nb.values))
@@ -75,7 +76,7 @@ func (nb *nodeBuilder) build() (node ProllyNode) {
 			if err != nil {
 				panic(err.Error())
 			}
-			if n != CidBytesLen {
+			if n != schema.CidBytesLen {
 				panic("wrong cid bytes length")
 			}
 			var lnk ipld.Link = cidlink.Link{Cid: c}
@@ -83,13 +84,6 @@ func (nb *nodeBuilder) build() (node ProllyNode) {
 		}
 		n.Links = lnks
 	}
-	//Node{
-	//	Keys:     _keys,
-	//	Values:   _vals,
-	//	Size:     nb.size,
-	//	Level:    nb.level,
-	//	Subtrees: _subtrees,
-	//}
 
 	nb.recycleBuffers()
 	nb.size = 0

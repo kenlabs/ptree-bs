@@ -17,7 +17,7 @@ func TestMergeWithoutOverlap(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, nil)
 	assert.NoError(t, err)
 	for _, pair := range data {
 		err = ck.AddPair(ctx, pair[0], pair[1])
@@ -27,14 +27,14 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(root)
 
-	st1 := NewStaticProllyTree(root, ns)
+	st1 := NewStaticProllyTree(root, ns, nil)
 
 	data2 := make([][2][]byte, 1000)
 	for i := range data2 {
 		v := []byte(string(rune(i*2 + 1)))
 		data2[i][0], data2[i][1] = v, v
 	}
-	ck2, err := NewEmptyChunker(ctx, ns)
+	ck2, err := NewEmptyChunker(ctx, ns, nil)
 	assert.NoError(t, err)
 	for _, pair := range data2 {
 		err = ck2.AddPair(ctx, pair[0], pair[1])
@@ -44,7 +44,7 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(root2)
 
-	st2 := NewStaticProllyTree(root2, ns)
+	st2 := NewStaticProllyTree(root2, ns, nil)
 
 	newTree, err := MergeStaticTrees(ctx, st1, st2)
 	assert.NoError(t, err)
@@ -68,7 +68,7 @@ func TestMergeWithOverlap(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, nil)
 	assert.NoError(t, err)
 	for _, pair := range data {
 		err = ck.AddPair(ctx, pair[0], pair[1])
@@ -77,7 +77,7 @@ func TestMergeWithOverlap(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	st1 := NewStaticProllyTree(root, ns)
+	st1 := NewStaticProllyTree(root, ns, nil)
 
 	data2 := make([][2][]byte, 1500)
 	for i := range data2 {
@@ -85,7 +85,7 @@ func TestMergeWithOverlap(t *testing.T) {
 		v := []byte(string(rune(i*3 + 1)))
 		data2[i][0], data2[i][1] = k, v
 	}
-	ck2, err := NewEmptyChunker(ctx, ns)
+	ck2, err := NewEmptyChunker(ctx, ns, nil)
 	assert.NoError(t, err)
 	for _, pair := range data2 {
 		err = ck2.AddPair(ctx, pair[0], pair[1])
@@ -94,7 +94,7 @@ func TestMergeWithOverlap(t *testing.T) {
 	root2, err := ck2.Done(ctx)
 	assert.NoError(t, err)
 
-	st2 := NewStaticProllyTree(root2, ns)
+	st2 := NewStaticProllyTree(root2, ns, nil)
 
 	newTree, err := MergeStaticTrees(ctx, st1, st2)
 	assert.NoError(t, err)
