@@ -6,7 +6,6 @@ import (
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/zeebo/assert"
 	"math/rand"
-	"ptree-bs/pkg/prolly/tree/config"
 	"testing"
 )
 
@@ -22,13 +21,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	ns := newTestNodeStore()
 	testdata := RandomTuplePairs(100000)
 
-	cfg := &config.ChunkConfig{
-		MinChunkSize: config.DefaultMinChunkSize,
-		MaxChunkSize: config.DefaultMaxChunkSize,
-		Strategy:     config.RollingHash,
-	}
-
-	ck, err := NewEmptyChunker(ctx, ns, cfg)
+	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
 	for _, pair := range testdata {
 		err = ck.AddPair(ctx, pair[0], pair[1])
@@ -38,7 +31,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	assert.NoError(t, err)
 	//t.Log(root)
 
-	st := NewStaticProllyTree(root, ns, cfg)
+	st := NewStaticProllyTree(root, ns)
 
 	for i := 0; i < 1000; i++ {
 		idx := rand.Intn(100000)

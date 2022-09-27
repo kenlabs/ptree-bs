@@ -5,7 +5,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
-	"ptree-bs/pkg/prolly/tree/config"
 	"testing"
 )
 
@@ -19,13 +18,7 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	cfg := &config.ChunkConfig{
-		MinChunkSize: config.DefaultMinChunkSize,
-		MaxChunkSize: config.DefaultMaxChunkSize,
-		Strategy:     config.RollingHash,
-	}
-
-	ck, err := NewEmptyChunker(ctx, ns, cfg)
+	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
 
 	for _, pair := range data {
@@ -36,7 +29,7 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	originPTree := NewStaticProllyTree(root, ns, cfg)
+	originPTree := NewStaticProllyTree(root, ns)
 
 	inserts := make([][2][]byte, len(data))
 	for i := range data {
@@ -74,7 +67,7 @@ func TestMPW(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns, nil)
+	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
 
 	for _, pair := range data {
@@ -85,7 +78,7 @@ func TestMPW(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	originPTree := NewStaticProllyTree(root, ns, nil)
+	originPTree := NewStaticProllyTree(root, ns)
 	inserts := make([][2][]byte, 2)
 	for i := 0; i < 2; i++ {
 		inserts[i][0] = []byte(string(rune(i*2 + 1)))

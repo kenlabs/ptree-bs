@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"ptree-bs/pkg/prolly/tree/config"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
 
@@ -14,9 +13,8 @@ var (
 )
 
 type StaticTree struct {
-	Root   schema.ProllyNode
-	Config *config.ChunkConfig
-	Ns     *NodeStore
+	Root schema.ProllyNode
+	Ns   *NodeStore
 }
 
 func DefaultBytesCompare(left, right []byte) int {
@@ -45,14 +43,10 @@ func searchNode(query []byte, nd schema.ProllyNode) int {
 	return i
 }
 
-func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore, cfg *config.ChunkConfig) *StaticTree {
-	if cfg != nil {
-		cfg = config.DefaultChunkConfig()
-	}
+func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore) *StaticTree {
 	return &StaticTree{
-		Root:   node,
-		Ns:     ns,
-		Config: cfg,
+		Root: node,
+		Ns:   ns,
 	}
 }
 

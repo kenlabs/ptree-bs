@@ -3,7 +3,6 @@ package tree
 import (
 	"context"
 	"fmt"
-	"ptree-bs/pkg/prolly/tree/config"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
 
@@ -12,7 +11,6 @@ type Chunker struct {
 	parent *Chunker
 	level  int
 	done   bool
-	cfg    *config.ChunkConfig
 
 	splitter nodeSplitter
 	builder  *nodeBuilder
@@ -20,29 +18,18 @@ type Chunker struct {
 	ns *NodeStore
 }
 
-func NewEmptyChunker(ctx context.Context, ns *NodeStore, cfg *config.ChunkConfig) (*Chunker, error) {
-	return newChunker(ctx, nil, 0, ns, cfg)
+func NewEmptyChunker(ctx context.Context, ns *NodeStore) (*Chunker, error) {
+	return newChunker(ctx, nil, 0, ns)
 }
 
-func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore, cfg *config.ChunkConfig) (*Chunker, error) {
-	if cfg == nil {
-		cfg = config.DefaultChunkConfig()
-	}
-
-	var splitter nodeSplitter
-	if cfg.Strategy == config.KeySplitter {
-		splitter = defaultSplitterFactory(uint8(level % 256))
-	} else {
-		splitter = newRollingHashSplitter(uint8(levelSalt[level%256]))
-	}
-
+func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore) (*Chunker, error) {
+	splitter := defaultSplitterFactory(uint8(level % 256))
 	builider := newNodeBuilder(level)
 
 	c := &Chunker{
 		cur:      cur,
 		parent:   nil,
 		level:    level,
-		cfg:      cfg,
 		splitter: splitter,
 		builder:  builider,
 		ns:       ns,
@@ -194,7 +181,7 @@ func (c *Chunker) createParentChunker(ctx context.Context) error {
 		parent = c.cur.parent
 	}
 
-	c.parent, err = newChunker(ctx, parent, c.level+1, c.ns, c.cfg)
+	c.parent, err = newChunker(ctx, parent, c.level+1, c.ns)
 	if err != nil {
 		return err
 	}

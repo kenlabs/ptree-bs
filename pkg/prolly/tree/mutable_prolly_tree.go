@@ -17,9 +17,8 @@ func NewMutableProllyTree(st *StaticTree) *MutableTree {
 	_root := st.Root
 	_ns := st.Ns
 	newSt := StaticTree{
-		Root:   _root,
-		Ns:     _ns,
-		Config: st.Config,
+		Root: _root,
+		Ns:   _ns,
 	}
 	return &MutableTree{
 		edits: skip.NewSkipList(func(left, right []byte) int {
@@ -36,7 +35,7 @@ func (mp *MutableTree) Tree(ctx context.Context) (StaticTree, error) {
 	//tr := mp.tree.Copy()
 	tr := mp.tree
 
-	root, err := ApplyMutations(ctx, tr.Ns, mp.tree.Config, tr.Root, mp.mutations(), DefaultBytesCompare)
+	root, err := ApplyMutations(ctx, tr.Ns, tr.Root, mp.mutations(), DefaultBytesCompare)
 	if err != nil {
 		return StaticTree{}, err
 	}

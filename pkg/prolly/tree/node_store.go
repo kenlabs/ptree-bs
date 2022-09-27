@@ -7,9 +7,21 @@ import (
 	"github.com/ipld/go-ipld-prime"
 	_ "github.com/ipld/go-ipld-prime/codec/dagcbor"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	"github.com/multiformats/go-multicodec"
 	"ptree-bs/pkg/prolly/tree/linksystem"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
+
+var LinkProto = cidlink.LinkPrototype{
+	Prefix: cid.Prefix{
+		Version:  1,
+		Codec:    uint64(multicodec.DagCbor),
+		MhType:   uint64(multicodec.Sha2_256),
+		MhLength: 16,
+	},
+}
+
+const CidBytesLen = 20
 
 type NodeStore struct {
 	bs   blockstore.Blockstore
@@ -29,7 +41,7 @@ func (ns *NodeStore) Write(ctx context.Context, nd schema.ProllyNode) (cid.Cid, 
 	if err != nil {
 		return cid.Undef, err
 	}
-	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, schema.LinkProto, ipldNode)
+	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, LinkProto, ipldNode)
 	if err != nil {
 		return cid.Undef, err
 	}

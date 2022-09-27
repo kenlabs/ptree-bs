@@ -76,7 +76,7 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 			if err != nil {
 				panic(err.Error())
 			}
-			if n != schema.CidBytesLen {
+			if n != CidBytesLen {
 				panic("wrong cid bytes length")
 			}
 			var lnk ipld.Link = cidlink.Link{Cid: c}
@@ -84,6 +84,13 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 		}
 		n.Links = lnks
 	}
+	//Node{
+	//	Keys:     _keys,
+	//	Values:   _vals,
+	//	Size:     nb.size,
+	//	Level:    nb.level,
+	//	Subtrees: _subtrees,
+	//}
 
 	nb.recycleBuffers()
 	nb.size = 0

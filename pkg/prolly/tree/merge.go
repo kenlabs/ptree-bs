@@ -4,7 +4,6 @@ import (
 	"context"
 	"golang.org/x/sync/errgroup"
 	"io"
-	"ptree-bs/pkg/prolly/tree/config"
 	"ptree-bs/pkg/prolly/tree/schema"
 	//"ptree-bs/prolly"
 )
@@ -77,7 +76,7 @@ func sendPatches(ctx context.Context, differ Differ, buf patchBuffer) error {
 }
 
 func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (StaticTree, error) {
-	root, err := Merge(ctx, base.Ns, base.Root, new.Root, base.Config, DefaultBytesCompare)
+	root, err := Merge(ctx, base.Ns, base.Root, new.Root, DefaultBytesCompare)
 	if err != nil {
 		return StaticTree{}, err
 	}
@@ -88,7 +87,7 @@ func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (S
 	}, nil
 }
 
-func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schema.ProllyNode, cfg *config.ChunkConfig, order CompareFn) (schema.ProllyNode, error) {
+func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schema.ProllyNode, order CompareFn) (schema.ProllyNode, error) {
 	var result schema.ProllyNode
 
 	df, err := DifferFromRoots(ctx, ns, base, new, order)
@@ -110,7 +109,7 @@ func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schem
 	})
 
 	eg.Go(func() error {
-		result, err = ApplyMutations(ctx, ns, cfg, base, patches, DefaultBytesCompare)
+		result, err = ApplyMutations(ctx, ns, base, patches, DefaultBytesCompare)
 		return err
 	})
 
