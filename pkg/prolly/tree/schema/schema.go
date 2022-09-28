@@ -23,6 +23,6 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("failed to load schema: %w", err))
 	}
-	ProllyNodePrototype = bindnode.Prototype((*ProllyNode)(nil), typeSystem.TypeByName("ProllyNode"))
+	ProllyNodePrototype = bindnode.Prototype(&ProllyNode{}, typeSystem.TypeByName("ProllyNode"))
 
 }

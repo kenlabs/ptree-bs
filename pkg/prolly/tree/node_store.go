@@ -50,7 +50,7 @@ func (ns *NodeStore) Write(ctx context.Context, nd schema.ProllyNode) (cid.Cid, 
 }
 
 func (ns *NodeStore) Read(ctx context.Context, c cid.Cid) (schema.ProllyNode, error) {
-	nd, err := ns.lsys.Load(ipld.LinkContext{Ctx: ctx}, cidlink.Link{Cid: c}, schema.ProllyNodePrototype)
+	nd, err := ns.lsys.Load(ipld.LinkContext{Ctx: ctx}, cidlink.Link{Cid: c}, schema.ProllyNodePrototype.Representation())
 	if err != nil {
 		return schema.ProllyNode{}, err
 	}
