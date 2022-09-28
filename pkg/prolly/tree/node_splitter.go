@@ -3,6 +3,7 @@ package tree
 import (
 	"crypto/sha512"
 	"encoding/binary"
+	"github.com/kch42/buzhash"
 	"github.com/zeebo/xxh3"
 	"math"
 )
@@ -69,14 +70,14 @@ type keySplitter struct {
 }
 
 const (
-	targetSize float64 = 4096
-	maxUint32  float64 = math.MaxUint32
+	//targetSize float64 = 4096
+	maxUint32 float64 = math.MaxUint32
 
 	// weibull params
-	K = 4.
+	//K = 4.
 
 	// TODO: seems like this should be targetSize / math.Gamma(1 + 1/K).
-	L = targetSize
+	//L = targetSize
 )
 
 func newKeySplitter(level uint8) nodeSplitter {
@@ -134,10 +135,10 @@ func (ks *keySplitter) Reset() {
 // is less than this percentage.
 func weibullCheck(size, thisSize, hash uint32) bool {
 	startx := float64(size - thisSize)
-	start := -math.Expm1(-math.Pow(startx/L, K))
+	start := -math.Expm1(-math.Pow(startx/chunkCfg.KeySplitterCfg.L, chunkCfg.KeySplitterCfg.K))
 
 	endx := float64(size)
-	end := -math.Expm1(-math.Pow(endx/L, K))
+	end := -math.Expm1(-math.Pow(endx/chunkCfg.KeySplitterCfg.L, chunkCfg.KeySplitterCfg.K))
 
 	p := float64(hash) / maxUint32
 	d := 1 - start
@@ -155,4 +156,94 @@ func xxHash32(b []byte, salt uint64) uint32 {
 func saltFromLevel(level uint8) (salt uint64) {
 	full := sha512.Sum512([]byte{level})
 	return binary.LittleEndian.Uint64(full[:8])
+}
+
+// rollingHashSplitter is a nodeSplitter that makes chunk boundary decisions using
+// a rolling value hasher that processes Item pairs in a byte-wise fashion.
+//
+// rollingHashSplitter uses a dynamic hash pattern designed to constrain the chunk
+// Size distribution by reducing the likelihood of forming very large or very small
+// chunks. As the Size of the current chunk grows, rollingHashSplitter changes the
+// target pattern to make it easier to match. The result is a chunk Size distribution
+// that is closer to a binomial distribution, rather than geometric.
+type rollingHashSplitter struct {
+	bz     *buzhash.BuzHash
+	offset uint32
+	window uint32
+	salt   byte
+
+	crossedBoundary bool
+}
+
+const (
+// The window Size to use for computing the rolling hash. This is way more than necessary assuming random data
+// (two bytes would be sufficient with a target chunk Size of 4k). The benefit of a larger window is it allows
+// for better distribution on input with lower entropy. At a target chunk Size of 4k, any given byte changing
+// has roughly a 1.5% chance of affecting an existing boundary, which seems like an acceptable trade-off. The
+// choice of a prime number provides better distribution for repeating input.
+// rollingHashWindow = uint32(67)
+)
+
+var _ nodeSplitter = &rollingHashSplitter{}
+
+func newRollingHashSplitter(salt uint8) nodeSplitter {
+	return &rollingHashSplitter{
+		bz:     buzhash.NewBuzHash(chunkCfg.RollingHashCfg.RollingHashWindow),
+		window: chunkCfg.RollingHashCfg.RollingHashWindow,
+		salt:   byte(salt),
+	}
+}
+
+var _ splitterFactory = newRollingHashSplitter
+
+// Append implements NodeSplitter
+func (sns *rollingHashSplitter) Append(key, value []byte) (err error) {
+	for _, byt := range key {
+		_ = sns.hashByte(byt)
+	}
+	for _, byt := range value {
+		_ = sns.hashByte(byt)
+	}
+	return nil
+}
+
+func (sns *rollingHashSplitter) hashByte(b byte) bool {
+	sns.offset++
+
+	if sns.crossedBoundary {
+		return true
+	}
+
+	sns.bz.HashByte(b ^ sns.salt)
+
+	if sns.offset < minChunkSize {
+		return true
+	}
+	if sns.offset > maxChunkSize {
+		sns.crossedBoundary = true
+		return true
+	}
+
+	hash := sns.bz.Sum32()
+	patt := rollingHashPattern(sns.offset)
+	sns.crossedBoundary = hash&patt == patt
+
+	return sns.crossedBoundary
+}
+
+// CrossedBoundary implements NodeSplitter
+func (sns *rollingHashSplitter) CrossedBoundary() bool {
+	return sns.crossedBoundary
+}
+
+// Reset implements NodeSplitter
+func (sns *rollingHashSplitter) Reset() {
+	sns.crossedBoundary = false
+	sns.offset = 0
+	sns.bz = buzhash.NewBuzHash(sns.window)
+}
+
+func rollingHashPattern(offset uint32) uint32 {
+	shift := 15 - (offset >> 10)
+	return 1<<shift - 1
 }

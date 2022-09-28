@@ -11,6 +11,13 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	ctx := context.Background()
 	ns := newTestNodeStore()
 
+	//SetGlobalChunkConfig(&ChunkConfig{
+	//	ChunkStrategy: RollingHash,
+	//	RollingHashCfg: &RollingHashConfig{
+	//		RollingHashWindow: 67,
+	//	},
+	//})
+
 	data := make([][2][]byte, 1000)
 	for i := range data {
 		v := []byte(string(rune(i * 2)))
@@ -25,7 +32,6 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	}
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
-	t.Log(root)
 
 	st1 := NewStaticProllyTree(root, ns)
 
@@ -61,6 +67,13 @@ func TestMergeWithoutOverlap(t *testing.T) {
 func TestMergeWithOverlap(t *testing.T) {
 	ctx := context.Background()
 	ns := newTestNodeStore()
+
+	SetGlobalChunkConfig(&ChunkConfig{
+		ChunkStrategy: RollingHash,
+		RollingHashCfg: &RollingHashConfig{
+			RollingHashWindow: 67,
+		},
+	})
 
 	data := make([][2][]byte, 1000)
 	for i := range data {

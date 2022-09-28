@@ -136,7 +136,7 @@ func DifferFromRoots(ctx context.Context, ns *NodeStore, base, new schema.Prolly
 		return Differ{}, err
 	}
 
-	newStop, err := NewCursorPastEnd(ctx, ns, base)
+	newStop, err := NewCursorPastEnd(ctx, ns, new)
 	if err != nil {
 		return Differ{}, err
 	}

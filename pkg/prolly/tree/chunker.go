@@ -23,7 +23,16 @@ func NewEmptyChunker(ctx context.Context, ns *NodeStore) (*Chunker, error) {
 }
 
 func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore) (*Chunker, error) {
-	splitter := defaultSplitterFactory(uint8(level % 256))
+	var splitter nodeSplitter
+	switch chunkCfg.ChunkStrategy {
+	case KeySplitter:
+		splitter = defaultSplitterFactory(uint8(level % 256))
+	case RollingHash:
+		splitter = newRollingHashSplitter(uint8(levelSalt[level%256]))
+	default:
+		panic(fmt.Errorf("unsupported chunk strategy: %s", chunkCfg.ChunkStrategy))
+	}
+
 	builider := newNodeBuilder(level)
 
 	c := &Chunker{

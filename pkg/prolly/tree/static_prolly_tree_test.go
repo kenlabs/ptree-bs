@@ -19,7 +19,14 @@ func newTestNodeStore() *NodeStore {
 func TestCreateStaticMapAndGet(t *testing.T) {
 	ctx := context.Background()
 	ns := newTestNodeStore()
-	testdata := RandomTuplePairs(100000)
+	testdata := RandomTuplePairs(10000)
+
+	SetGlobalChunkConfig(&ChunkConfig{
+		ChunkStrategy: RollingHash,
+		RollingHashCfg: &RollingHashConfig{
+			RollingHashWindow: 67,
+		},
+	})
 
 	ck, err := NewEmptyChunker(ctx, ns)
 	assert.NoError(t, err)
@@ -34,7 +41,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	st := NewStaticProllyTree(root, ns)
 
 	for i := 0; i < 1000; i++ {
-		idx := rand.Intn(100000)
+		idx := rand.Intn(10000)
 		val, err := st.Get(ctx, testdata[idx][0])
 		if err != nil {
 			t.Fatal(err)
