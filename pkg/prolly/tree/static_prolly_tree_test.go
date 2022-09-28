@@ -12,7 +12,7 @@ import (
 func newTestNodeStore() *NodeStore {
 	ds := datastore.NewMapDatastore()
 	bs := blockstore.NewBlockstore(ds)
-	ns := NewNodeStore(bs)
+	ns, _ := NewNodeStore(bs, &storeConfig{cacheSize: 1 << 16})
 	return ns
 }
 
