@@ -59,7 +59,6 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 		Keys:       _keys,
 		Values:     nil,
 		Links:      nil,
-		Size:       nb.size,
 		Level:      nb.level,
 		Count:      uint16(len(nb.keys)),
 		Subtrees:   _subtrees,

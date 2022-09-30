@@ -23,7 +23,6 @@ type ProllyNode struct {
 	Keys       [][]byte
 	Values     [][]byte
 	Links      []*ipld.Link
-	Size       int
 	Level      int
 	Count      uint16
 	Subtrees   []uint64

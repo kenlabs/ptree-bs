@@ -17,7 +17,6 @@ func TestGenIPLDNode(t *testing.T) {
 		Keys:       [][]byte{[]byte("123k")},
 		Values:     [][]byte{[]byte("123v")},
 		Links:      []*ipld.Link{&lnk1},
-		Size:       0,
 		Level:      0,
 		Count:      0,
 		Subtrees:   []uint64{1, 2, 5},

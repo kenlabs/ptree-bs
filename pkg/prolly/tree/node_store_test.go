@@ -23,7 +23,6 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 		Keys:       [][]byte{[]byte("123k")},
 		Values:     [][]byte{[]byte("123v")},
 		Links:      []*ipld.Link{&lnk1},
-		Size:       199999,
 		Level:      199998,
 		Count:      25000,
 		Subtrees:   []uint64{1, 2, 5},
@@ -46,7 +45,6 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	assert.Equal(t, nd.Values, inode.Values)
 	assert.Equal(t, nd.Level, inode.Level)
 	assert.Equal(t, nd.Links, inode.Links)
-	assert.Equal(t, nd.Size, inode.Size)
 	assert.Equal(t, nd.Count, inode.Count)
 	assert.Equal(t, nd.Totalcount, inode.Totalcount)
 	assert.Equal(t, nd.Subtrees, inode.Subtrees)
