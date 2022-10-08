@@ -163,5 +163,7 @@ func TestBenchmarkMutableTree(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, value, totalData[idx][1])
 		}
+
+		_ = ds.Close()
 	}
 }

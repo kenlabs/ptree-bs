@@ -30,7 +30,7 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	}
 
 	bs := blockstore.NewBlockstore(datastore.NewMapDatastore())
-	ns, err := NewNodeStore(bs, nil)
+	ns, err := NewNodeStore(bs, &storeConfig{cacheSize: 1 << 10})
 	assert.NoError(t, err)
 
 	ctx := context.Background()

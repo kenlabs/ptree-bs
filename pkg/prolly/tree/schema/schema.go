@@ -10,7 +10,7 @@ import (
 
 var (
 
-	// MetadataPrototype represents the IPLD node prototype of Metadata.
+	// ProllyNodePrototype represents the IPLD node prototype of Metadata.
 	// See: bindnode.Prototype.
 	ProllyNodePrototype schema.TypedPrototype
 

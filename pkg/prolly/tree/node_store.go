@@ -94,3 +94,6 @@ func (ns *NodeStore) Read(ctx context.Context, c cid.Cid) (schema.ProllyNode, er
 
 	return *inode, nil
 }
+
+func (ns *NodeStore) Close() {
+}

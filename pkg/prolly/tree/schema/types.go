@@ -20,7 +20,7 @@ func (nd *ProllyNode) ToNode() (n ipld.Node, err error) {
 
 // UnwrapProllyNode unwraps the given node as Prolly Node.
 //
-// Note that the node is reassigned to MetadataPrototype if its prototype is different.
+// Note that the node is reassigned to ProllyNodePrototype if its prototype is different.
 // Therefore, it is recommended to load the node using the correct prototype initially
 // function to avoid unnecessary node assignment.
 func UnwrapProllyNode(node ipld.Node) (*ProllyNode, error) {
@@ -32,17 +32,17 @@ func UnwrapProllyNode(node ipld.Node) (*ProllyNode, error) {
 	// The code in this repo, however should load nodes with appropriate prototype and never trigger
 	// this if statement.
 	if node.Prototype() != ProllyNodePrototype {
-		adBuilder := ProllyNodePrototype.NewBuilder()
-		err := adBuilder.AssignNode(node)
+		pnBuilder := ProllyNodePrototype.NewBuilder()
+		err := pnBuilder.AssignNode(node)
 		if err != nil {
 			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
 		}
-		node = adBuilder.Build()
+		node = pnBuilder.Build()
 	}
 
 	nd, ok := bindnode.Unwrap(node).(*ProllyNode)
 	if !ok || nd == nil {
-		return nil, fmt.Errorf("unwrapped node does not match schema.Metadata")
+		return nil, fmt.Errorf("unwrapped node does not match schema.ProllyNode")
 	}
 	return nd, nil
 }

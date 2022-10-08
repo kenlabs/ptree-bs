@@ -128,6 +128,8 @@ func TestBenchmarkStaticTree(t *testing.T) {
 			}
 			assert.True(t, ok)
 		}
+
+		_ = ds.Close()
 	}
 
 }

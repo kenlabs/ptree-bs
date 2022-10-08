@@ -7,6 +7,7 @@ require (
 	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-cid v0.2.0
 	github.com/ipfs/go-datastore v0.5.0
+	github.com/ipfs/go-ds-leveldb v0.5.0
 	github.com/ipfs/go-ipfs-blockstore v1.2.0
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipld/go-ipld-prime v0.18.0
@@ -25,7 +26,6 @@ require (
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/ipfs/bbloom v0.0.4 // indirect
-	github.com/ipfs/go-ds-leveldb v0.5.0 // indirect
 	github.com/ipfs/go-ipfs-ds-help v1.1.0 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
 	github.com/ipfs/go-ipld-format v0.3.0 // indirect
