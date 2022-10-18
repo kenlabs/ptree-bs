@@ -2,13 +2,9 @@ package tree
 
 import (
 	"context"
-	leveldb "github.com/ipfs/go-ds-leveldb"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
-	"math/rand"
 	"testing"
-	"time"
 )
 
 func TestMutablePTreeWriteAndGet(t *testing.T) {
@@ -83,87 +79,4 @@ func materializePTree(t *testing.T, mut *MutableTree) StaticTree {
 	m, err := mut.Tree(ctx)
 	assert.NoError(t, err)
 	return m
-}
-
-func TestBenchmarkMutableTree(t *testing.T) {
-	type testCase struct {
-		staticTreeLen int
-		insertLen     int
-		cacheSize     int
-	}
-
-	testCases := []testCase{
-		{
-			3000,
-			3000,
-			1 << 22,
-		},
-		{
-			3000,
-			3000,
-			0,
-		},
-		{
-			20000,
-			10000,
-			1 << 24,
-		},
-		{
-			20000,
-			10000,
-			0,
-		},
-	}
-
-	for _, tc := range testCases {
-		testdata := RandomTuplePairs(tc.staticTreeLen)
-		ctx := context.Background()
-		testDbDir := t.TempDir()
-		ds, err := leveldb.NewDatastore(testDbDir, nil)
-		assert.NoError(t, err)
-		bs := blockstore.NewBlockstore(ds)
-		ns, err := NewNodeStore(bs, &storeConfig{cacheSize: tc.cacheSize})
-		assert.NoError(t, err)
-
-		stime := time.Now()
-		ck, err := NewEmptyChunker(ctx, ns)
-		assert.NoError(t, err)
-
-		for _, pair := range testdata {
-			err = ck.AddPair(ctx, pair[0], pair[1])
-			assert.NoError(t, err)
-		}
-
-		root, err := ck.Done(ctx)
-		assert.NoError(t, err)
-
-		originPTree := NewStaticProllyTree(root, ns)
-		insertsData := RandomTuplePairs(tc.insertLen)
-
-		var st StaticTree
-		mut := originPTree.Mutate()
-		for _, ins := range insertsData {
-			err = mut.Put(ctx, ins[0], ins[1])
-			assert.NoError(t, err)
-
-		}
-		st = materializePTree(t, mut)
-		costTime := time.Since(stime)
-		t.Logf("%#v costs time: %v", tc, costTime)
-
-		totalData := append(testdata, insertsData...)
-		for i := 0; i < len(totalData)/10; i++ {
-			idx := rand.Intn(len(totalData))
-
-			ok, err := st.Has(ctx, totalData[idx][0])
-			assert.NoError(t, err)
-			assert.True(t, ok)
-
-			value, err := st.Get(ctx, totalData[idx][0])
-			assert.NoError(t, err)
-			assert.Equal(t, value, totalData[idx][1])
-		}
-
-		_ = ds.Close()
-	}
 }

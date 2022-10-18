@@ -50,3 +50,19 @@ func SetGlobalChunkConfig(cfg *ChunkConfig) {
 	}
 	chunkCfg = cfg
 }
+
+func SetDefaultChunkConfig() {
+	chunkCfg = &ChunkConfig{
+		MinChunkSize:  DefaultMinChunkSize,
+		MaxChunkSize:  DefaultMaxChunkSize,
+		ChunkStrategy: KeySplitter,
+		KeySplitterCfg: &KeySplitterConfig{
+			TargetSize: 4096,
+			K:          4,
+			L:          4096,
+		},
+		RollingHashCfg: &RollingHashConfig{
+			RollingHashWindow: 67,
+		},
+	}
+}
