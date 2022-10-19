@@ -14,7 +14,7 @@ import (
 )
 
 func TestIPLDNodeStoreLoad(t *testing.T) {
-	c1, err := LinkProto.Sum([]byte("link1"))
+	c1, err := schema.LinkProto.Sum([]byte("link1"))
 	assert.NoError(t, err)
 	var lnk1 ipld.Link
 	lnk1 = cidlink.Link{Cid: c1}

@@ -1,12 +1,20 @@
 ## What's this?
 
-Implementation of [peer-to-peer search trees](https://0fps.net/2020/12/19/peer-to-peer-ordered-search-indexes/) [(probabalistic b-trees trees)](https://www.dolthub.com/blog/2020-04-01-how-dolt-stores-table-data/) with IPLD schema and blockstore. It is similar to prolly tree in dolt but the fundamental storage, tree node and so on are implemented by ipfs module(cid, schema, blockstore, linksystem...)
+Implementation of [peer-to-peer search trees](https://0fps.net/2020/12/19/peer-to-peer-ordered-search-indexes/) [(probabalistic b-trees trees)](https://www.dolthub.com/blog/2020-04-01-how-dolt-stores-table-data/) It is similar to prolly tree in dolt but the fundamental storage, tree node and so on are implemented by ipfs module(cid, schema, blockstore, linksystem...)
 
 
 
 ## What's this used for?
 
 We are planning to use the module in ipfs storage index.
+
+
+
+## Note
+
+The config about chunk strategy is set globally and should not be modified while using. If you use the custom config, you should set it before using every time and should not change the config.
+
+The cidprefix of ProllyNode encoded is dagcbor.
 
 
 
@@ -38,9 +46,9 @@ type Link_ProllyNode &ProllyNode
 
 Win11  I5-12600KF
 
-**Note**: Cache size is the max number of items in lru cache instead of max bytes length in cache. Tree Size is the number of k/v pairs built from
+**Note**: Cache size is the max number of items(in fact is the ProllyNode) in lru cache instead of max bytes length in cache. Tree Size is the number of k/v pairs the tree built from
 
-**Builder Tree**
+**Build Tree**
 
 | Tree Size | Cache Size | Cost Time  |
 | --------- | ---------- | ---------- |
@@ -84,5 +92,4 @@ Note: random insert and  batch insert.
 | 10000     | 0          | 5000                | RollingHash    | 538.2212ms |
 | 100000    | 1 << 24    | 50000               | RollingHash    | 5.3276151s |
 | 100000    | 0          | 50000               | RollingHash    | 5.6442758s |
-|           |            |                     |                |            |
 
