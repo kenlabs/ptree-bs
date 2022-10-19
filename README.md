@@ -1,4 +1,36 @@
+## What's this?
 
+Implementation of [peer-to-peer search trees](https://0fps.net/2020/12/19/peer-to-peer-ordered-search-indexes/) [(probabalistic b-trees trees)](https://www.dolthub.com/blog/2020-04-01-how-dolt-stores-table-data/) with IPLD schema and blockstore. It is similar to prolly tree in dolt but the fundamental storage, tree node and so on are implemented by ipfs module(cid, schema, blockstore, linksystem...)
+
+
+
+## What's this used for?
+
+We are planning to use the module in ipfs storage index.
+
+
+
+## Schema of ProllyNode
+
+```ipldsch
+type ProllyNode struct {
+   Keys [Bytes]
+    # leaf nodes
+   Values nullable [Bytes]
+    # internal nodes
+   Links nullable [Link_ProllyNode]
+    # 0 for leaf
+   Level Int
+    # item count (number of k/v pairs)
+   Count Int
+    # numbers of Total count for each k/v pair
+   Subtrees [Int]
+    # total leaf k/v number included in the node
+   Totalcount Int
+} representation tuple
+
+type Link_ProllyNode &ProllyNode
+```
 
 
 
