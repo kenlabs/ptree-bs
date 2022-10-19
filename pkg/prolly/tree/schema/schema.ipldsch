@@ -1,10 +1,16 @@
 type ProllyNode struct {
 	Keys [Bytes]
+    # leaf nodes
 	Values nullable [Bytes]
+    # internal nodes
 	Links nullable [Link_ProllyNode]
+    # 0 for leaf
 	Level Int
+    # item count (number of k/v pairs)
 	Count Int
+    # numbers of Total count for each k/v pair
 	Subtrees [Int]
+    # total leaf k/v number included in the node
 	Totalcount Int
 } representation tuple
 

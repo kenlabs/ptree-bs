@@ -32,9 +32,62 @@ func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, 
 	st := NewStaticProllyTree(root, ns)
 
 	costTime := time.Since(startTime)
-	t.Logf("Creating tree costs time: %v", costTime)
+	t.Logf("Creating tree(size:%d) with cache(size:%d) costs time: %v", len(data), cacheSize, costTime)
 
 	return st, ds
+}
+
+func TestBuildStaticTree(t *testing.T) {
+	type testCase struct {
+		dataLength int
+		CacheSize  int
+	}
+
+	testCases := []testCase{
+		{
+			1000,
+			0,
+		},
+		{
+			10000,
+			0,
+		},
+		{
+			100000,
+			1 << 20,
+		},
+		{
+			100000,
+			0,
+		},
+	}
+
+	for _, ts := range testCases {
+		testdata := RandomTuplePairs(ts.dataLength)
+		ctx := context.Background()
+
+		st, ds := createStaticTreeFromData(ctx, t, ts.CacheSize, testdata)
+
+		for i := 0; i < ts.dataLength/1000; i++ {
+			idx := rand.Intn(ts.dataLength)
+			val, err := st.Get(ctx, testdata[idx][0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, val, testdata[idx][1])
+		}
+
+		for i := 0; i < ts.dataLength/1000; i++ {
+			idx := rand.Intn(ts.dataLength)
+			ok, err := st.Has(ctx, testdata[idx][0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.True(t, ok)
+		}
+
+		_ = ds.Close()
+	}
 }
 
 func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
@@ -61,7 +114,7 @@ func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
 		assert.Equal(t, val, testdata[idx][1])
 	}
 	readCostTime := time.Since(readStartTime)
-	t.Logf("rand reading %d data costs time: %v", dataLength, readCostTime)
+	t.Logf("rand reading %d data costs time: %v", dataLength/10, readCostTime)
 
 	_ = ds.Close()
 }
@@ -248,55 +301,69 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		testdata := RandomTuplePairs(tc.staticTreeLen)
-		ctx := context.Background()
-		testDbDir := t.TempDir()
-		ds, err := leveldb.NewDatastore(testDbDir, nil)
-		assert.NoError(t, err)
-		bs := blockstore.NewBlockstore(ds)
-		ns, err := NewNodeStore(bs, &storeConfig{cacheSize: tc.cacheSize})
-		assert.NoError(t, err)
-
-		stime := time.Now()
-		ck, err := NewEmptyChunker(ctx, ns)
-		assert.NoError(t, err)
-
-		for _, pair := range testdata {
-			err = ck.AddPair(ctx, pair[0], pair[1])
+	for i := 0; i < 2; i++ {
+		strategy := "KeySplitter"
+		if i == 1 {
+			strategy = "RollingHash"
+			SetGlobalChunkConfig(&ChunkConfig{
+				ChunkStrategy: RollingHash,
+				RollingHashCfg: &RollingHashConfig{
+					RollingHashWindow: 67,
+				},
+			})
+			defer SetDefaultChunkConfig()
+		}
+		for _, tc := range testCases {
+			testdata := RandomTuplePairs(tc.staticTreeLen)
+			ctx := context.Background()
+			testDbDir := t.TempDir()
+			ds, err := leveldb.NewDatastore(testDbDir, nil)
 			assert.NoError(t, err)
+			bs := blockstore.NewBlockstore(ds)
+			ns, err := NewNodeStore(bs, &storeConfig{cacheSize: tc.cacheSize})
+			assert.NoError(t, err)
+
+			stime := time.Now()
+			ck, err := NewEmptyChunker(ctx, ns)
+			assert.NoError(t, err)
+
+			for _, pair := range testdata {
+				err = ck.AddPair(ctx, pair[0], pair[1])
+				assert.NoError(t, err)
+			}
+
+			root, err := ck.Done(ctx)
+			assert.NoError(t, err)
+
+			originPTree := NewStaticProllyTree(root, ns)
+			insertsData := RandomTuplePairs(tc.insertLen)
+
+			var st StaticTree
+			mut := originPTree.Mutate()
+			for _, ins := range insertsData {
+				err = mut.Put(ctx, ins[0], ins[1])
+				assert.NoError(t, err)
+
+			}
+			st = materializePTree(t, mut)
+			costTime := time.Since(stime)
+			t.Logf("%#v strategy: %s costs time: %v", tc, strategy, costTime)
+
+			totalData := append(testdata, insertsData...)
+			for i := 0; i < len(totalData)/10; i++ {
+				idx := rand.Intn(len(totalData))
+
+				ok, err := st.Has(ctx, totalData[idx][0])
+				assert.NoError(t, err)
+				assert.True(t, ok)
+
+				value, err := st.Get(ctx, totalData[idx][0])
+				assert.NoError(t, err)
+				assert.Equal(t, value, totalData[idx][1])
+			}
+
+			_ = ds.Close()
 		}
 
-		root, err := ck.Done(ctx)
-		assert.NoError(t, err)
-
-		originPTree := NewStaticProllyTree(root, ns)
-		insertsData := RandomTuplePairs(tc.insertLen)
-
-		var st StaticTree
-		mut := originPTree.Mutate()
-		for _, ins := range insertsData {
-			err = mut.Put(ctx, ins[0], ins[1])
-			assert.NoError(t, err)
-
-		}
-		st = materializePTree(t, mut)
-		costTime := time.Since(stime)
-		t.Logf("%#v costs time: %v", tc, costTime)
-
-		totalData := append(testdata, insertsData...)
-		for i := 0; i < len(totalData)/10; i++ {
-			idx := rand.Intn(len(totalData))
-
-			ok, err := st.Has(ctx, totalData[idx][0])
-			assert.NoError(t, err)
-			assert.True(t, ok)
-
-			value, err := st.Get(ctx, totalData[idx][0])
-			assert.NoError(t, err)
-			assert.Equal(t, value, totalData[idx][1])
-		}
-
-		_ = ds.Close()
 	}
 }

@@ -20,12 +20,19 @@ func SumSubtrees(subtrees []uint64) (sum uint64) {
 }
 
 type ProllyNode struct {
-	Keys       [][]byte
-	Values     [][]byte
-	Links      []*ipld.Link
-	Level      int
-	Count      uint16
-	Subtrees   []uint64
+	// raw keys for leaf nodes, cids for branch nodes
+	Keys [][]byte
+	// raw values for leaf nodes, nil for branch
+	Values [][]byte
+	// cid links for branch nodes, nil for leaf
+	Links []*ipld.Link
+	// 0 for leaf
+	Level int
+	// number of k/v in the node
+	Count uint16
+	// total count for each subtree, if leaf node [1,1,1....]
+	Subtrees []uint64
+	// total leaf k/v number included in the node
 	Totalcount uint64
 }
 
