@@ -44,8 +44,6 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 
 		st = materializePTree(t, mut)
 
-		assert.Equal(t, len(data)+1, st.Count())
-
 		ok, err := st.Has(ctx, ins[0])
 		assert.NoError(t, err)
 		assert.True(t, ok)

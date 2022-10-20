@@ -81,7 +81,7 @@ func (c *Chunker) processPrefix(ctx context.Context) error {
 		_, err := c.append(ctx,
 			c.cur.CurrentKey(),
 			c.cur.CurrentValue(),
-			c.cur.CurrentSubtreeSize())
+		)
 		if err != nil {
 			return err
 		}
@@ -95,7 +95,7 @@ func (c *Chunker) processPrefix(ctx context.Context) error {
 }
 
 func (c *Chunker) AddPair(ctx context.Context, key, value []byte) error {
-	_, err := c.append(ctx, key, value, 1)
+	_, err := c.append(ctx, key, value)
 	return err
 }
 
@@ -103,7 +103,7 @@ func (c *Chunker) UpdatePair(ctx context.Context, key, value []byte) error {
 	if err := c.skip(ctx); err != nil {
 		return err
 	}
-	_, err := c.append(ctx, key, value, 1)
+	_, err := c.append(ctx, key, value)
 	return err
 }
 
@@ -116,7 +116,7 @@ func (c *Chunker) skip(ctx context.Context) error {
 	return err
 }
 
-func (c *Chunker) append(ctx context.Context, key, value []byte, subtree uint64) (bool, error) {
+func (c *Chunker) append(ctx context.Context, key, value []byte) (bool, error) {
 	// When adding new key-value pairs to an in-progress chunk, we must enforce 3 invariants
 	// (1) Key-value pairs are stored in the same Node.
 	// (2) The total Size of a Node's data cannot exceed |MaxVectorOffset|.
@@ -144,7 +144,7 @@ func (c *Chunker) append(ctx context.Context, key, value []byte, subtree uint64)
 		}
 	}
 
-	c.builder.addItems(key, value, subtree)
+	c.builder.addItems(key, value)
 
 	err := c.splitter.Append(key, value)
 	if err != nil {
@@ -172,7 +172,7 @@ func (c *Chunker) appendToParent(ctx context.Context, novel *novelNode) (bool, e
 		}
 	}
 
-	return c.parent.append(ctx, novel.lastKey, novel.addr.Bytes(), novel.treeCount)
+	return c.parent.append(ctx, novel.lastKey, novel.addr.Bytes())
 }
 
 func (c *Chunker) handleBoundary(ctx context.Context) error {
@@ -217,7 +217,7 @@ func (c *Chunker) finalizeCursor(ctx context.Context) error {
 		ok, err := c.append(ctx,
 			c.cur.CurrentKey(),
 			c.cur.CurrentValue(),
-			c.cur.CurrentSubtreeSize())
+		)
 		if err != nil {
 			return err
 		}
@@ -324,7 +324,7 @@ func (c *Chunker) AdvanceTo(ctx context.Context, next *Cursor) error {
 		return nil
 	}
 
-	split, err := c.append(ctx, c.cur.CurrentKey(), c.cur.CurrentValue(), c.cur.CurrentSubtreeSize())
+	split, err := c.append(ctx, c.cur.CurrentKey(), c.cur.CurrentValue())
 	if err != nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func (c *Chunker) AdvanceTo(ctx context.Context, next *Cursor) error {
 			// we caught up before synchronizing
 			return nil
 		}
-		split, err = c.append(ctx, c.cur.CurrentKey(), c.cur.CurrentValue(), c.cur.CurrentSubtreeSize())
+		split, err = c.append(ctx, c.cur.CurrentKey(), c.cur.CurrentValue())
 		if err != nil {
 			return err
 		}

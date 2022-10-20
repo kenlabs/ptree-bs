@@ -61,10 +61,6 @@ func (st *StaticTree) Mutate() *MutableTree {
 	return NewMutableProllyTree(st)
 }
 
-func (st *StaticTree) Count() int {
-	return st.Root.TreeCount()
-}
-
 func (st *StaticTree) Copy() StaticTree {
 	rootBytes, err := json.Marshal(st.Root)
 	if err != nil {

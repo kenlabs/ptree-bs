@@ -8,10 +8,6 @@ type ProllyNode struct {
 	Level Int
     # item count (number of k/v pairs)
 	Count Int
-    # numbers of Total count for each k/v pair
-	Subtrees [Int]
-    # total leaf k/v number included in the node
-	Totalcount Int
 	Cfg Link_ChunkConfig
 } representation tuple
 

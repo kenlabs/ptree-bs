@@ -15,14 +15,12 @@ func TestGenIPLDNode(t *testing.T) {
 	lnk1 = cidlink.Link{Cid: c1}
 
 	nd := &ProllyNode{
-		Keys:       [][]byte{[]byte("123k")},
-		Values:     [][]byte{[]byte("123v")},
-		Links:      []*ipld.Link{&lnk1},
-		Level:      0,
-		Count:      0,
-		Subtrees:   []uint64{1, 2, 5},
-		Totalcount: 1,
-		Cfg:        cid.Undef,
+		Keys:   [][]byte{[]byte("123k")},
+		Values: [][]byte{[]byte("123v")},
+		Links:  []*ipld.Link{&lnk1},
+		Level:  0,
+		Count:  0,
+		Cfg:    cid.Undef,
 	}
 
 	_, err = nd.ToNode()
@@ -32,5 +30,5 @@ func TestGenIPLDNode(t *testing.T) {
 	t.Log(nd.Values)
 	t.Log(nd.GetAddress(0))
 	t.Log(string(nd.GetKey(0)))
-	t.Log(nd.Totalcount)
+	//t.Log(nd.Totalcount)
 }

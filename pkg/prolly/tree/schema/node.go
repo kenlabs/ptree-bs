@@ -30,20 +30,11 @@ type ProllyNode struct {
 	Level int
 	// number of k/v in the node
 	Count uint16
-	// total count for each subtree, if leaf node [1,1,1....]
-	Subtrees []uint64
-	// total leaf k/v number included in the node
-	Totalcount uint64
-
-	Cfg cid.Cid
+	Cfg   cid.Cid
 }
 
 func (nd *ProllyNode) ItemCount() int {
 	return int(nd.Count)
-}
-
-func (nd *ProllyNode) TreeCount() int {
-	return int(nd.Totalcount)
 }
 
 func (nd *ProllyNode) IsLeaf() bool {
@@ -68,10 +59,6 @@ func (nd *ProllyNode) GetAddress(i int) cid.Cid {
 		panic("invalid cid length")
 	}
 	return c
-}
-
-func (nd *ProllyNode) GetSubtreeCounts() []uint64 {
-	return nd.Subtrees
 }
 
 const CidBytesLen = 20

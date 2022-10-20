@@ -97,7 +97,6 @@ func TestMergeWithOverlap(t *testing.T) {
 
 	newTree, err := MergeStaticTrees(ctx, st1, st2)
 	assert.NoError(t, err)
-	assert.Equal(t, newTree.Count(), len(data2))
 
 	for i := range data2 {
 		v, err := newTree.Get(ctx, data2[i][0])

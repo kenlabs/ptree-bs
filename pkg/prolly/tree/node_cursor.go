@@ -31,16 +31,6 @@ func (cur *Cursor) CurrentRef() cid.Cid {
 	return cur.nd.GetAddress(cur.idx)
 }
 
-func (cur *Cursor) CurrentSubtreeSize() uint64 {
-	if cur.isLeaf() {
-		return 1
-	}
-	if cur.subtrees == nil {
-		cur.subtrees = cur.nd.GetSubtreeCounts()
-	}
-	return cur.subtrees[cur.idx]
-}
-
 func (cur *Cursor) atNodeEnd() bool {
 	lastKeyIdx := cur.nd.ItemCount() - 1
 	return cur.idx == lastKeyIdx
