@@ -12,6 +12,27 @@ type ProllyNode struct {
 	Subtrees [Int]
     # total leaf k/v number included in the node
 	Totalcount Int
+	Cfg Link_ChunkConfig
 } representation tuple
 
 type Link_ProllyNode &ProllyNode
+
+type KeySplitterConfig struct{
+    TargetSize  Float
+    K           Float
+    L           Float
+} representation tuple
+
+type RollingHashConfig struct{
+    RollingHashWindow   Int
+} representation tuple
+
+type ChunkConfig struct{
+    MinChunkSize Int
+    MaxChunkSize Int
+    ChunkStrategy String
+    KeySplitterCfg nullable KeySplitterConfig
+    RollingHashCfg nullable RollingHashConfig
+} representation tuple
+
+type Link_ChunkConfig &ChunkConfig

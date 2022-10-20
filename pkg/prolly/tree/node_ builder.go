@@ -20,11 +20,13 @@ type nodeBuilder struct {
 	keys, values [][]byte
 	size, level  int
 	subtrees     []uint64
+	cfg          cid.Cid
 }
 
-func newNodeBuilder(level int) *nodeBuilder {
+func newNodeBuilder(level int, cfgCid cid.Cid) *nodeBuilder {
 	nb := &nodeBuilder{
 		level: level,
+		cfg:   cfgCid,
 	}
 	return nb
 }
@@ -63,6 +65,7 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 		Count:      uint16(len(nb.keys)),
 		Subtrees:   _subtrees,
 		Totalcount: schema.SumSubtrees(_subtrees),
+		Cfg:        nb.cfg,
 	}
 	if nb.level == 0 {
 		_vals := make([][]byte, len(nb.values))
@@ -83,13 +86,6 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 		}
 		n.Links = lnks
 	}
-	//Node{
-	//	Keys:     _keys,
-	//	Values:   _vals,
-	//	Size:     nb.size,
-	//	Level:    nb.level,
-	//	Subtrees: _subtrees,
-	//}
 
 	nb.recycleBuffers()
 	nb.size = 0

@@ -14,6 +14,8 @@ var (
 	// See: bindnode.Prototype.
 	ProllyNodePrototype schema.TypedPrototype
 
+	ChunkConfigPrototype schema.TypedPrototype
+
 	//go:embed schema.ipldsch
 	schemaBytes []byte
 )
@@ -25,4 +27,5 @@ func init() {
 	}
 	ProllyNodePrototype = bindnode.Prototype(&ProllyNode{}, typeSystem.TypeByName("ProllyNode"))
 
+	ChunkConfigPrototype = bindnode.Prototype(&ChunkConfig{}, typeSystem.TypeByName("ChunkConfig"))
 }

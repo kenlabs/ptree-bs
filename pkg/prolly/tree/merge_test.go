@@ -11,20 +11,13 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	ctx := context.Background()
 	ns := newTestNodeStore()
 
-	//SetGlobalChunkConfig(&ChunkConfig{
-	//	ChunkStrategy: RollingHash,
-	//	RollingHashCfg: &RollingHashConfig{
-	//		RollingHashWindow: 67,
-	//	},
-	//})
-
 	data := make([][2][]byte, 1000)
 	for i := range data {
 		v := []byte(string(rune(i * 2)))
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
 	for _, pair := range data {
 		err = ck.AddPair(ctx, pair[0], pair[1])
@@ -40,7 +33,7 @@ func TestMergeWithoutOverlap(t *testing.T) {
 		v := []byte(string(rune(i*2 + 1)))
 		data2[i][0], data2[i][1] = v, v
 	}
-	ck2, err := NewEmptyChunker(ctx, ns)
+	ck2, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
 	for _, pair := range data2 {
 		err = ck2.AddPair(ctx, pair[0], pair[1])
@@ -68,20 +61,13 @@ func TestMergeWithOverlap(t *testing.T) {
 	ctx := context.Background()
 	ns := newTestNodeStore()
 
-	SetGlobalChunkConfig(&ChunkConfig{
-		ChunkStrategy: RollingHash,
-		RollingHashCfg: &RollingHashConfig{
-			RollingHashWindow: 67,
-		},
-	})
-
 	data := make([][2][]byte, 1000)
 	for i := range data {
 		v := []byte(string(rune(i * 2)))
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
 	for _, pair := range data {
 		err = ck.AddPair(ctx, pair[0], pair[1])
@@ -98,7 +84,7 @@ func TestMergeWithOverlap(t *testing.T) {
 		v := []byte(string(rune(i*3 + 1)))
 		data2[i][0], data2[i][1] = k, v
 	}
-	ck2, err := NewEmptyChunker(ctx, ns)
+	ck2, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
 	for _, pair := range data2 {
 		err = ck2.AddPair(ctx, pair[0], pair[1])

@@ -2,6 +2,7 @@ package tree
 
 import (
 	"context"
+	"fmt"
 	"golang.org/x/sync/errgroup"
 	"io"
 	"ptree-bs/pkg/prolly/tree/schema"
@@ -76,7 +77,11 @@ func sendPatches(ctx context.Context, differ Differ, buf patchBuffer) error {
 }
 
 func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (StaticTree, error) {
-	root, err := Merge(ctx, base.Ns, base.Root, new.Root, DefaultBytesCompare)
+	if !base.ChunkCfg.Equal(new.ChunkCfg) {
+		return StaticTree{}, fmt.Errorf("can not merger two trees with different chunk config, %#v and %#v", base.ChunkCfg, new.ChunkCfg)
+	}
+
+	root, err := Merge(ctx, base.Ns, base.Root, new.Root, base.ChunkCfg, DefaultBytesCompare)
 	if err != nil {
 		return StaticTree{}, err
 	}
@@ -87,7 +92,7 @@ func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (S
 	}, nil
 }
 
-func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schema.ProllyNode, order CompareFn) (schema.ProllyNode, error) {
+func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schema.ProllyNode, cfg *schema.ChunkConfig, order CompareFn) (schema.ProllyNode, error) {
 	var result schema.ProllyNode
 
 	df, err := DifferFromRoots(ctx, ns, base, new, order)
@@ -109,7 +114,7 @@ func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schem
 	})
 
 	eg.Go(func() error {
-		result, err = ApplyMutations(ctx, ns, base, patches, DefaultBytesCompare)
+		result, err = ApplyMutations(ctx, ns, base, cfg, patches, DefaultBytesCompare)
 		return err
 	})
 

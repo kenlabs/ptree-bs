@@ -34,6 +34,8 @@ type ProllyNode struct {
 	Subtrees []uint64
 	// total leaf k/v number included in the node
 	Totalcount uint64
+
+	Cfg cid.Cid
 }
 
 func (nd *ProllyNode) ItemCount() int {

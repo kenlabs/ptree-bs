@@ -3,6 +3,7 @@ package tree
 import (
 	"context"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
 
@@ -11,6 +12,8 @@ type Chunker struct {
 	parent *Chunker
 	level  int
 	done   bool
+	cfg    *schema.ChunkConfig
+	cfgCid cid.Cid
 
 	splitter nodeSplitter
 	builder  *nodeBuilder
@@ -18,22 +21,31 @@ type Chunker struct {
 	ns *NodeStore
 }
 
-func NewEmptyChunker(ctx context.Context, ns *NodeStore) (*Chunker, error) {
-	return newChunker(ctx, nil, 0, ns)
+func NewEmptyChunker(ctx context.Context, ns *NodeStore, cfg *schema.ChunkConfig) (*Chunker, error) {
+	return newChunker(ctx, nil, 0, cfg, cid.Undef, ns)
 }
 
-func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore) (*Chunker, error) {
+func newChunker(ctx context.Context, cur *Cursor, level int, cfg *schema.ChunkConfig, cfgCid cid.Cid, ns *NodeStore) (*Chunker, error) {
 	var splitter nodeSplitter
-	switch chunkCfg.ChunkStrategy {
-	case KeySplitter:
-		splitter = defaultSplitterFactory(uint8(level % 256))
-	case RollingHash:
-		splitter = newRollingHashSplitter(uint8(levelSalt[level%256]))
+	switch cfg.ChunkStrategy {
+	case schema.KeySplitter:
+		splitter = defaultSplitterFactory(uint8(level%256), cfg)
+	case schema.RollingHash:
+		splitter = newRollingHashSplitter(uint8(levelSalt[level%256]), cfg)
 	default:
-		panic(fmt.Errorf("unsupported chunk strategy: %s", chunkCfg.ChunkStrategy))
+		panic(fmt.Errorf("unsupported chunk strategy: %s", cfg.ChunkStrategy))
 	}
 
-	builider := newNodeBuilder(level)
+	// first save config to nodeStore
+	var err error
+	if !cfgCid.Defined() {
+		cfgCid, err = ns.WriteChunkConfig(ctx, *cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	builider := newNodeBuilder(level, cfgCid)
 
 	c := &Chunker{
 		cur:      cur,
@@ -41,6 +53,8 @@ func newChunker(ctx context.Context, cur *Cursor, level int, ns *NodeStore) (*Ch
 		level:    level,
 		splitter: splitter,
 		builder:  builider,
+		cfg:      cfg,
+		cfgCid:   cfgCid,
 		ns:       ns,
 	}
 
@@ -190,7 +204,7 @@ func (c *Chunker) createParentChunker(ctx context.Context) error {
 		parent = c.cur.parent
 	}
 
-	c.parent, err = newChunker(ctx, parent, c.level+1, c.ns)
+	c.parent, err = newChunker(ctx, parent, c.level+1, c.cfg, c.cfgCid, c.ns)
 	if err != nil {
 		return err
 	}

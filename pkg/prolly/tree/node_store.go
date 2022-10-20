@@ -85,5 +85,33 @@ func (ns *NodeStore) Read(ctx context.Context, c cid.Cid) (schema.ProllyNode, er
 	return *inode, nil
 }
 
+func (ns *NodeStore) ReadChunkCfg(ctx context.Context, c cid.Cid) (schema.ChunkConfig, error) {
+	icfg, err := ns.lsys.Load(ipld.LinkContext{Ctx: ctx}, cidlink.Link{Cid: c}, schema.ChunkConfigPrototype.Representation())
+	if err != nil {
+		return schema.ChunkConfig{}, err
+	}
+
+	cfg, err := schema.UnwrapChunkConfig(icfg)
+	if err != nil {
+		return schema.ChunkConfig{}, err
+	}
+
+	return *cfg, nil
+}
+
+func (ns *NodeStore) WriteChunkConfig(ctx context.Context, cfg schema.ChunkConfig) (cid.Cid, error) {
+	ipldNode, err := cfg.ToNode()
+	if err != nil {
+		return cid.Undef, err
+	}
+	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, schema.LinkProto, ipldNode)
+	if err != nil {
+		return cid.Undef, err
+	}
+	c := lnk.(cidlink.Link).Cid
+
+	return c, nil
+}
+
 func (ns *NodeStore) Close() {
 }

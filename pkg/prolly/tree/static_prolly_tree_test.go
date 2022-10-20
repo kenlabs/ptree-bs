@@ -21,16 +21,7 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	ns := newTestNodeStore()
 	testdata := RandomTuplePairs(10000)
 
-	SetGlobalChunkConfig(&ChunkConfig{
-		ChunkStrategy: RollingHash,
-		RollingHashCfg: &RollingHashConfig{
-			RollingHashWindow: 67,
-		},
-	})
-
-	defer SetDefaultChunkConfig()
-
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
 	for _, pair := range testdata {
 		err = ck.AddPair(ctx, pair[0], pair[1])

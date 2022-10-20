@@ -6,11 +6,24 @@ import (
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
+	"ptree-bs/pkg/prolly/tree/schema"
 	"testing"
 	"time"
 )
 
-func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, data [][2][]byte) (*StaticTree, *leveldb.Datastore) {
+var (
+	chunkSplitterCfg    = schema.DefaultChunkConfig()
+	chunkRollingHashCfg = &schema.ChunkConfig{
+		MinChunkSize:  1 << 9,
+		MaxChunkSize:  1 << 14,
+		ChunkStrategy: schema.RollingHash,
+		RollingHashCfg: &schema.RollingHashConfig{
+			RollingHashWindow: 67,
+		},
+	}
+)
+
+func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, data [][2][]byte, cfg *schema.ChunkConfig) (*StaticTree, *leveldb.Datastore) {
 	testDbDir := t.TempDir()
 	ds, err := leveldb.NewDatastore(testDbDir, nil)
 	assert.NoError(t, err)
@@ -20,7 +33,7 @@ func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, 
 
 	startTime := time.Now()
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, cfg)
 	assert.NoError(t, err)
 	for _, pair := range data {
 		err = ck.AddPair(ctx, pair[0], pair[1])
@@ -66,7 +79,7 @@ func TestBuildStaticTree(t *testing.T) {
 		testdata := RandomTuplePairs(ts.dataLength)
 		ctx := context.Background()
 
-		st, ds := createStaticTreeFromData(ctx, t, ts.CacheSize, testdata)
+		st, ds := createStaticTreeFromData(ctx, t, ts.CacheSize, testdata, chunkSplitterCfg)
 
 		for i := 0; i < ts.dataLength/1000; i++ {
 			idx := rand.Intn(ts.dataLength)
@@ -91,8 +104,6 @@ func TestBuildStaticTree(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
-	SetDefaultChunkConfig()
-
 	// build statictree from 500000 pairs of kvs
 	dataLength := 500000
 	ctx := context.Background()
@@ -102,7 +113,7 @@ func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
 	//  avg size of k/v is 30 bytes
 	testdata := RandomTuplePairs(dataLength)
 
-	st, ds := createStaticTreeFromData(ctx, t, 0, testdata)
+	st, ds := createStaticTreeFromData(ctx, t, 0, testdata, chunkSplitterCfg)
 
 	readStartTime := time.Now()
 	for i := 0; i < dataLength/10; i++ {
@@ -120,21 +131,12 @@ func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWithoutCacheRollingHash(t *testing.T) {
-	SetGlobalChunkConfig(&ChunkConfig{
-		ChunkStrategy: RollingHash,
-		RollingHashCfg: &RollingHashConfig{
-			RollingHashWindow: 67,
-		},
-	})
-
-	defer SetDefaultChunkConfig()
-
 	dataLength := 500000
 	ctx := context.Background()
 
 	testdata := RandomTuplePairs(dataLength)
 
-	st, ds := createStaticTreeFromData(ctx, t, 0, testdata)
+	st, ds := createStaticTreeFromData(ctx, t, 0, testdata, chunkRollingHashCfg)
 
 	readStartTime := time.Now()
 	for i := 0; i < dataLength/10; i++ {
@@ -152,13 +154,11 @@ func Test500KStaticTreeRead50KWithoutCacheRollingHash(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith16KCache(t *testing.T) {
-	SetDefaultChunkConfig()
-
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
 
-	st, ds := createStaticTreeFromData(ctx, t, 1<<14, testdata)
+	st, ds := createStaticTreeFromData(ctx, t, 1<<14, testdata, chunkSplitterCfg)
 
 	readStartTime := time.Now()
 	for i := 0; i < dataLength/10; i++ {
@@ -176,20 +176,11 @@ func Test500KStaticTreeRead50KWith16KCache(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith16KCacheRollingHash(t *testing.T) {
-	SetGlobalChunkConfig(&ChunkConfig{
-		ChunkStrategy: RollingHash,
-		RollingHashCfg: &RollingHashConfig{
-			RollingHashWindow: 67,
-		},
-	})
-
-	defer SetDefaultChunkConfig()
-
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
 
-	st, ds := createStaticTreeFromData(ctx, t, 1<<14, testdata)
+	st, ds := createStaticTreeFromData(ctx, t, 1<<14, testdata, chunkRollingHashCfg)
 
 	readStartTime := time.Now()
 	for i := 0; i < dataLength/10; i++ {
@@ -207,13 +198,11 @@ func Test500KStaticTreeRead50KWith16KCacheRollingHash(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith4KCache(t *testing.T) {
-	SetDefaultChunkConfig()
-
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
 
-	st, ds := createStaticTreeFromData(ctx, t, 1<<12, testdata)
+	st, ds := createStaticTreeFromData(ctx, t, 1<<12, testdata, chunkSplitterCfg)
 
 	readStartTime := time.Now()
 	for i := 0; i < dataLength/10; i++ {
@@ -231,20 +220,11 @@ func Test500KStaticTreeRead50KWith4KCache(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith4KCacheRollingHash(t *testing.T) {
-	SetGlobalChunkConfig(&ChunkConfig{
-		ChunkStrategy: RollingHash,
-		RollingHashCfg: &RollingHashConfig{
-			RollingHashWindow: 67,
-		},
-	})
-
-	defer SetDefaultChunkConfig()
-
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
 
-	st, ds := createStaticTreeFromData(ctx, t, 1<<12, testdata)
+	st, ds := createStaticTreeFromData(ctx, t, 1<<12, testdata, chunkRollingHashCfg)
 
 	readStartTime := time.Now()
 	for i := 0; i < dataLength/10; i++ {
@@ -302,16 +282,11 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
-		strategy := "KeySplitter"
+		var cfg *schema.ChunkConfig
 		if i == 1 {
-			strategy = "RollingHash"
-			SetGlobalChunkConfig(&ChunkConfig{
-				ChunkStrategy: RollingHash,
-				RollingHashCfg: &RollingHashConfig{
-					RollingHashWindow: 67,
-				},
-			})
-			defer SetDefaultChunkConfig()
+			cfg = chunkRollingHashCfg
+		} else {
+			cfg = chunkSplitterCfg
 		}
 		for _, tc := range testCases {
 			testdata := RandomTuplePairs(tc.staticTreeLen)
@@ -324,7 +299,7 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 			assert.NoError(t, err)
 
 			stime := time.Now()
-			ck, err := NewEmptyChunker(ctx, ns)
+			ck, err := NewEmptyChunker(ctx, ns, cfg)
 			assert.NoError(t, err)
 
 			for _, pair := range testdata {
@@ -347,7 +322,7 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 			}
 			st = materializePTree(t, mut)
 			costTime := time.Since(stime)
-			t.Logf("%#v strategy: %s costs time: %v", tc, strategy, costTime)
+			t.Logf("%#v strategy: %s costs time: %v", tc, cfg.ChunkStrategy, costTime)
 
 			totalData := append(testdata, insertsData...)
 			for i := 0; i < len(totalData)/10; i++ {

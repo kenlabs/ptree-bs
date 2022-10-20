@@ -17,7 +17,7 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 		data[i][0], data[i][1] = v, v
 	}
 
-	ck, err := NewEmptyChunker(ctx, ns)
+	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
 
 	for _, pair := range data {

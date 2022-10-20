@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-ipld-prime"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	"github.com/zeebo/assert"
@@ -21,6 +22,7 @@ func TestGenIPLDNode(t *testing.T) {
 		Count:      0,
 		Subtrees:   []uint64{1, 2, 5},
 		Totalcount: 1,
+		Cfg:        cid.Undef,
 	}
 
 	_, err = nd.ToNode()

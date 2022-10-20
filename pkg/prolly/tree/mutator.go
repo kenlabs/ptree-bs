@@ -3,6 +3,7 @@ package tree
 import (
 	"bytes"
 	"context"
+	"github.com/ipfs/go-cid"
 	"ptree-bs/pkg/prolly/skip"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
@@ -29,7 +30,7 @@ func (it *OrderedListIter) Close() error {
 	return nil
 }
 
-func ApplyMutations(ctx context.Context, ns *NodeStore, root schema.ProllyNode, edits MutationIter, compare CompareFn) (schema.ProllyNode, error) {
+func ApplyMutations(ctx context.Context, ns *NodeStore, root schema.ProllyNode, chunkCfg *schema.ChunkConfig, edits MutationIter, compare CompareFn) (schema.ProllyNode, error) {
 	newKey, newValue := edits.NextMutation(ctx)
 	if newKey == nil {
 		// no update
@@ -41,7 +42,7 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root schema.ProllyNode, 
 		return schema.ProllyNode{}, err
 	}
 
-	ck, err := newChunker(ctx, cur.Clone(), 0, ns)
+	ck, err := newChunker(ctx, cur.Clone(), 0, chunkCfg, cid.Undef, ns)
 	if err != nil {
 		return schema.ProllyNode{}, err
 	}

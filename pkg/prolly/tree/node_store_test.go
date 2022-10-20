@@ -14,10 +14,17 @@ import (
 )
 
 func TestIPLDNodeStoreLoad(t *testing.T) {
+	bs := blockstore.NewBlockstore(datastore.NewMapDatastore())
+	ns, err := NewNodeStore(bs, &storeConfig{cacheSize: 1 << 10})
+	assert.NoError(t, err)
+
 	c1, err := schema.LinkProto.Sum([]byte("link1"))
 	assert.NoError(t, err)
 	var lnk1 ipld.Link
 	lnk1 = cidlink.Link{Cid: c1}
+	cfg := schema.DefaultChunkConfig()
+	cfgCid, err := ns.WriteChunkConfig(context.Background(), *cfg)
+	assert.NoError(t, err)
 
 	nd := &schema.ProllyNode{
 		Keys:       [][]byte{[]byte("123k")},
@@ -27,11 +34,8 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 		Count:      25000,
 		Subtrees:   []uint64{1, 2, 5},
 		Totalcount: 1,
+		Cfg:        cfgCid,
 	}
-
-	bs := blockstore.NewBlockstore(datastore.NewMapDatastore())
-	ns, err := NewNodeStore(bs, &storeConfig{cacheSize: 1 << 10})
-	assert.NoError(t, err)
 
 	ctx := context.Background()
 
@@ -41,6 +45,9 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	inode, err := ns.Read(ctx, c)
 	assert.NoError(t, err)
 
+	_cfg, err := ns.ReadChunkCfg(context.Background(), inode.Cfg)
+	assert.NoError(t, err)
+
 	assert.Equal(t, nd.Keys, inode.Keys)
 	assert.Equal(t, nd.Values, inode.Values)
 	assert.Equal(t, nd.Level, inode.Level)
@@ -48,4 +55,6 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	assert.Equal(t, nd.Count, inode.Count)
 	assert.Equal(t, nd.Totalcount, inode.Totalcount)
 	assert.Equal(t, nd.Subtrees, inode.Subtrees)
+	assert.Equal(t, nd.Cfg, inode.Cfg)
+	assert.True(t, _cfg.Equal(cfg))
 }

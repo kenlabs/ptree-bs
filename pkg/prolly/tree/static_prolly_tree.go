@@ -13,8 +13,9 @@ var (
 )
 
 type StaticTree struct {
-	Root schema.ProllyNode
-	Ns   *NodeStore
+	Root     schema.ProllyNode
+	Ns       *NodeStore
+	ChunkCfg *schema.ChunkConfig
 }
 
 func DefaultBytesCompare(left, right []byte) int {
@@ -44,9 +45,15 @@ func searchNode(query []byte, nd schema.ProllyNode) int {
 }
 
 func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore) *StaticTree {
+	cfg, err := ns.ReadChunkCfg(context.Background(), node.Cfg)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	return &StaticTree{
-		Root: node,
-		Ns:   ns,
+		Root:     node,
+		Ns:       ns,
+		ChunkCfg: &cfg,
 	}
 }
 

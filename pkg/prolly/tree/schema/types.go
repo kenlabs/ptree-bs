@@ -57,3 +57,38 @@ func toError(r interface{}) error {
 		return fmt.Errorf("unknown panic: %v", r)
 	}
 }
+
+func (cfg *ChunkConfig) ToNode() (n ipld.Node, err error) {
+	// TODO: remove the panic recovery once IPLD bindnode is stabilized.
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(cfg, ChunkConfigPrototype.Type()).Representation()
+	return
+}
+
+func UnwrapChunkConfig(node ipld.Node) (*ChunkConfig, error) {
+	// When an IPLD node is loaded using `Prototype.Any` unwrap with bindnode will not work.
+	// Here we defensively check the prototype and wrap if needed, since:
+	//   - linksystem in sti is passed into other libraries, like go-legs, and
+	//   - for whatever reason clients of this package may load nodes using Prototype.Any.
+	//
+	// The code in this repo, however should load nodes with appropriate prototype and never trigger
+	// this if statement.
+	if node.Prototype() != ChunkConfigPrototype {
+		cfgBuilder := ChunkConfigPrototype.NewBuilder()
+		err := cfgBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = cfgBuilder.Build()
+	}
+
+	cfg, ok := bindnode.Unwrap(node).(*ChunkConfig)
+	if !ok || cfg == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.ChunkConfig")
+	}
+	return cfg, nil
+}

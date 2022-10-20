@@ -6,6 +6,7 @@ import (
 	"github.com/kch42/buzhash"
 	"github.com/zeebo/xxh3"
 	"math"
+	"ptree-bs/pkg/prolly/tree/schema"
 )
 
 var levelSalt = [...]uint64{
@@ -26,15 +27,10 @@ var levelSalt = [...]uint64{
 	saltFromLevel(15),
 }
 
-const (
-	minChunkSize = 1 << 9
-	maxChunkSize = 1 << 14
-)
-
 var defaultSplitterFactory splitterFactory = newKeySplitter
 
 // splitterFactory makes a nodeSplitter.
-type splitterFactory func(level uint8) nodeSplitter
+type splitterFactory func(level uint8, cfg *schema.ChunkConfig) nodeSplitter
 
 // nodeSplitter decides where []byte streams should be split into chunks.
 type nodeSplitter interface {
@@ -67,6 +63,7 @@ type keySplitter struct {
 	crossedBoundary bool
 
 	salt uint64
+	cfg  *schema.ChunkConfig
 }
 
 const (
@@ -80,9 +77,10 @@ const (
 	//L = targetSize
 )
 
-func newKeySplitter(level uint8) nodeSplitter {
+func newKeySplitter(level uint8, cfg *schema.ChunkConfig) nodeSplitter {
 	return &keySplitter{
 		salt: levelSalt[level],
+		cfg:  cfg,
 	}
 }
 
@@ -93,16 +91,16 @@ func (ks *keySplitter) Append(key, value []byte) error {
 	thisSize := uint32(len(key) + len(value))
 	ks.size += thisSize
 
-	if ks.size < minChunkSize {
+	if ks.size < ks.cfg.MinChunkSize {
 		return nil
 	}
-	if ks.size > maxChunkSize {
+	if ks.size > ks.cfg.MaxChunkSize {
 		ks.crossedBoundary = true
 		return nil
 	}
 
 	h := xxHash32(key, ks.salt)
-	ks.crossedBoundary = weibullCheck(ks.size, thisSize, h)
+	ks.crossedBoundary = weibullCheck(ks.size, thisSize, h, ks.cfg.KeySplitterCfg.K, ks.cfg.KeySplitterCfg.L)
 	return nil
 }
 
@@ -133,12 +131,12 @@ func (ks *keySplitter) Reset() {
 // that this record actually covers. We split is |hash|,
 // treated as a uniform random number between [0,1),
 // is less than this percentage.
-func weibullCheck(size, thisSize, hash uint32) bool {
+func weibullCheck(size, thisSize, hash uint32, K, L float64) bool {
 	startx := float64(size - thisSize)
-	start := -math.Expm1(-math.Pow(startx/chunkCfg.KeySplitterCfg.L, chunkCfg.KeySplitterCfg.K))
+	start := -math.Expm1(-math.Pow(startx/L, K))
 
 	endx := float64(size)
-	end := -math.Expm1(-math.Pow(endx/chunkCfg.KeySplitterCfg.L, chunkCfg.KeySplitterCfg.K))
+	end := -math.Expm1(-math.Pow(endx/L, K))
 
 	p := float64(hash) / maxUint32
 	d := 1 - start
@@ -173,6 +171,7 @@ type rollingHashSplitter struct {
 	salt   byte
 
 	crossedBoundary bool
+	cfg             *schema.ChunkConfig
 }
 
 const (
@@ -186,11 +185,12 @@ const (
 
 var _ nodeSplitter = &rollingHashSplitter{}
 
-func newRollingHashSplitter(salt uint8) nodeSplitter {
+func newRollingHashSplitter(salt uint8, cfg *schema.ChunkConfig) nodeSplitter {
 	return &rollingHashSplitter{
-		bz:     buzhash.NewBuzHash(chunkCfg.RollingHashCfg.RollingHashWindow),
-		window: chunkCfg.RollingHashCfg.RollingHashWindow,
-		salt:   byte(salt),
+		bz:     buzhash.NewBuzHash(cfg.RollingHashCfg.RollingHashWindow),
+		window: cfg.RollingHashCfg.RollingHashWindow,
+		salt:   salt,
+		cfg:    cfg,
 	}
 }
 
@@ -216,10 +216,10 @@ func (sns *rollingHashSplitter) hashByte(b byte) bool {
 
 	sns.bz.HashByte(b ^ sns.salt)
 
-	if sns.offset < minChunkSize {
+	if sns.offset < sns.cfg.MinChunkSize {
 		return true
 	}
-	if sns.offset > maxChunkSize {
+	if sns.offset > sns.cfg.MaxChunkSize {
 		sns.crossedBoundary = true
 		return true
 	}
