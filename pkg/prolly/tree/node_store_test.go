@@ -2,10 +2,9 @@ package tree
 
 import (
 	"context"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	"github.com/ipld/go-ipld-prime"
-	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	_ "github.com/multiformats/go-multicodec"
 	"github.com/zeebo/assert"
 	"ptree-bs/pkg/prolly/tree/schema"
@@ -20,8 +19,6 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 
 	c1, err := schema.LinkProto.Sum([]byte("link1"))
 	assert.NoError(t, err)
-	var lnk1 ipld.Link
-	lnk1 = cidlink.Link{Cid: c1}
 	cfg := schema.DefaultChunkConfig()
 	cfgCid, err := ns.WriteChunkConfig(context.Background(), *cfg, nil)
 	assert.NoError(t, err)
@@ -29,7 +26,7 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	nd := &schema.ProllyNode{
 		Keys:   [][]byte{[]byte("123k")},
 		Values: [][]byte{[]byte("123v")},
-		Links:  []*ipld.Link{&lnk1},
+		Links:  []cid.Cid{c1},
 		Level:  199998,
 		Count:  25000,
 		Cfg:    cfgCid,

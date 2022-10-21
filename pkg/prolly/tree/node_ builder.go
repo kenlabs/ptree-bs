@@ -3,8 +3,6 @@ package tree
 import (
 	"context"
 	"github.com/ipfs/go-cid"
-	"github.com/ipld/go-ipld-prime"
-	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	"ptree-bs/pkg/prolly/tree/schema"
 	"sync"
 )
@@ -64,7 +62,7 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 		copy(_vals, nb.values)
 		n.Values = _vals
 	} else {
-		lnks := make([]*ipld.Link, len(nb.values))
+		cids := make([]cid.Cid, len(nb.values))
 		for i, cidBytes := range nb.values {
 			n, c, err := cid.CidFromBytes(cidBytes)
 			if err != nil {
@@ -73,10 +71,9 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 			if n != CidBytesLen {
 				panic("wrong cid bytes length")
 			}
-			var lnk ipld.Link = cidlink.Link{Cid: c}
-			lnks[i] = &lnk
+			cids[i] = c
 		}
-		n.Links = lnks
+		n.Links = cids
 	}
 
 	nb.recycleBuffers()
@@ -128,10 +125,4 @@ func getItemSlices() [][]byte {
 
 func putItemSlices(sl [][]byte) {
 	itemsPool.Put(sl[:0])
-}
-
-var subtreePool = sync.Pool{
-	New: func() any {
-		return make([]uint64, 0, nodeBuilderListSize)
-	},
 }

@@ -8,7 +8,7 @@ type ProllyNode struct {
     # about the child node. Key is used for searching and cid is used for loading the child node from local storage or
     # network
 	Links nullable [Link_ProllyNode]
-    # 0 for leaf nodes, and add 1 for parent
+    # 0 for leaf nodes, and add 1 for parent level
 	Level Int
     # number of k/v paris in the node, whatever it's leaf or branch node
 	Count Int
