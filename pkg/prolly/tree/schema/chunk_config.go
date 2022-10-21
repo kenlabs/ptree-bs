@@ -21,9 +21,8 @@ type ChunkConfig struct {
 }
 
 type KeySplitterConfig struct {
-	TargetSize float64
-	K          float64
-	L          float64
+	K float64
+	L float64
 }
 
 type RollingHashConfig struct {
@@ -35,29 +34,14 @@ type RollingHashConfig struct {
 	RollingHashWindow uint32
 }
 
-//var chunkCfg = &ChunkConfig{
-//	MinChunkSize:  DefaultMinChunkSize,
-//	MaxChunkSize:  DefaultMaxChunkSize,
-//	ChunkStrategy: KeySplitter,
-//	KeySplitterCfg: &KeySplitterConfig{
-//		TargetSize: 4096,
-//		K:          4,
-//		L:          4096,
-//	},
-//	RollingHashCfg: &RollingHashConfig{
-//		RollingHashWindow: 67,
-//	},
-//}
-
 func DefaultChunkConfig() *ChunkConfig {
 	return &ChunkConfig{
 		MinChunkSize:  DefaultMinChunkSize,
 		MaxChunkSize:  DefaultMaxChunkSize,
 		ChunkStrategy: KeySplitter,
 		KeySplitterCfg: &KeySplitterConfig{
-			TargetSize: 4096,
-			K:          4,
-			L:          4096,
+			K: 4,
+			L: 4096,
 		},
 		RollingHashCfg: &RollingHashConfig{
 			RollingHashWindow: 67,
@@ -71,32 +55,8 @@ func (cfg *ChunkConfig) Equal(config *ChunkConfig) bool {
 	}
 	if cfg.ChunkStrategy == KeySplitter {
 		return cfg.KeySplitterCfg.L == config.KeySplitterCfg.L &&
-			cfg.KeySplitterCfg.K == config.KeySplitterCfg.K &&
-			cfg.KeySplitterCfg.TargetSize == config.KeySplitterCfg.TargetSize
+			cfg.KeySplitterCfg.K == config.KeySplitterCfg.K
 	} else {
 		return cfg.RollingHashCfg.RollingHashWindow == config.RollingHashCfg.RollingHashWindow
 	}
 }
-
-//func SetGlobalChunkConfig(cfg *ChunkConfig) {
-//	if cfg == nil {
-//		panic("can not set config nil")
-//	}
-//	chunkCfg = cfg
-//}
-//
-//func SetDefaultChunkConfig() {
-//	chunkCfg = &ChunkConfig{
-//		MinChunkSize:  DefaultMinChunkSize,
-//		MaxChunkSize:  DefaultMaxChunkSize,
-//		ChunkStrategy: KeySplitter,
-//		KeySplitterCfg: &KeySplitterConfig{
-//			TargetSize: 4096,
-//			K:          4,
-//			L:          4096,
-//		},
-//		RollingHashCfg: &RollingHashConfig{
-//			RollingHashWindow: 67,
-//		},
-//	}
-//}

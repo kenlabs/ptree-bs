@@ -39,7 +39,7 @@ func newChunker(ctx context.Context, cur *Cursor, level int, cfg *schema.ChunkCo
 	// first save config to nodeStore
 	var err error
 	if !cfgCid.Defined() {
-		cfgCid, err = ns.WriteChunkConfig(ctx, *cfg)
+		cfgCid, err = ns.WriteChunkConfig(ctx, *cfg, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -298,7 +298,7 @@ func getCanonicalRoot(ctx context.Context, ns *NodeStore, builder *nodeBuilder) 
 	childAddr := nd.GetAddress(0)
 
 	for {
-		child, err := ns.Read(ctx, childAddr)
+		child, err := ns.ReadNode(ctx, childAddr)
 		if err != nil {
 			return schema.ProllyNode{}, err
 		}

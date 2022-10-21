@@ -58,7 +58,7 @@ func (cur *Cursor) seek(ctx context.Context, key []byte, cp CompareFn) error {
 		}
 		cur.parent.keepInBounds()
 
-		cur.nd, err = cur.ns.Read(ctx, cur.parent.CurrentRef())
+		cur.nd, err = cur.ns.ReadNode(ctx, cur.parent.CurrentRef())
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func (cur *Cursor) fetchNode(ctx context.Context) error {
 		panic("invalid action")
 	}
 	var err error
-	cur.nd, err = cur.ns.Read(ctx, cur.parent.CurrentRef())
+	cur.nd, err = cur.ns.ReadNode(ctx, cur.parent.CurrentRef())
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, i
 		// stay in bounds for internal nodes
 		cur.keepInBounds()
 
-		nd, err := ns.Read(ctx, cur.CurrentRef())
+		nd, err := ns.ReadNode(ctx, cur.CurrentRef())
 		if err != nil {
 			return cur, err
 		}
@@ -263,7 +263,7 @@ func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNod
 	for !cur.isLeaf() {
 		cur.keepInBounds()
 
-		cur.nd, err = ns.Read(ctx, cur.CurrentRef())
+		cur.nd, err = ns.ReadNode(ctx, cur.CurrentRef())
 		if err != nil {
 			return cur, err
 		}
@@ -283,7 +283,7 @@ func NewCursorAtStart(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) 
 		return nil, err
 	}
 	for !leaf {
-		nd, err = ns.Read(ctx, cur.CurrentRef())
+		nd, err = ns.ReadNode(ctx, cur.CurrentRef())
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +309,7 @@ func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) (*
 		return nil, err
 	}
 	for !leaf {
-		nd, err = ns.Read(ctx, cur.CurrentRef())
+		nd, err = ns.ReadNode(ctx, cur.CurrentRef())
 		if err != nil {
 			return nil, err
 		}

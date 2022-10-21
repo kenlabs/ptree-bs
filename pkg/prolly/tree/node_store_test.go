@@ -23,7 +23,7 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	var lnk1 ipld.Link
 	lnk1 = cidlink.Link{Cid: c1}
 	cfg := schema.DefaultChunkConfig()
-	cfgCid, err := ns.WriteChunkConfig(context.Background(), *cfg)
+	cfgCid, err := ns.WriteChunkConfig(context.Background(), *cfg, nil)
 	assert.NoError(t, err)
 
 	nd := &schema.ProllyNode{
@@ -37,10 +37,10 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 
 	ctx := context.Background()
 
-	c, err := ns.Write(ctx, *nd)
+	c, err := ns.WriteNode(ctx, *nd, nil)
 	assert.NoError(t, err)
 
-	inode, err := ns.Read(ctx, c)
+	inode, err := ns.ReadNode(ctx, c)
 	assert.NoError(t, err)
 
 	_cfg, err := ns.ReadChunkCfg(context.Background(), inode.Cfg)

@@ -43,12 +43,19 @@ func NewNodeStore(bs blockstore.Blockstore, cfg *storeConfig) (*NodeStore, error
 	return ns, nil
 }
 
-func (ns *NodeStore) Write(ctx context.Context, nd schema.ProllyNode) (cid.Cid, error) {
+func (ns *NodeStore) WriteNode(ctx context.Context, nd schema.ProllyNode, prefix *cid.Prefix) (cid.Cid, error) {
+	var linkProto cidlink.LinkPrototype
+	if prefix == nil {
+		// default linkproto
+		linkProto = schema.LinkProto
+	} else {
+		linkProto = cidlink.LinkPrototype{Prefix: *prefix}
+	}
 	ipldNode, err := nd.ToNode()
 	if err != nil {
 		return cid.Undef, err
 	}
-	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, schema.LinkProto, ipldNode)
+	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, linkProto, ipldNode)
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -63,7 +70,7 @@ func (ns *NodeStore) Write(ctx context.Context, nd schema.ProllyNode) (cid.Cid, 
 	return c, nil
 }
 
-func (ns *NodeStore) Read(ctx context.Context, c cid.Cid) (schema.ProllyNode, error) {
+func (ns *NodeStore) ReadNode(ctx context.Context, c cid.Cid) (schema.ProllyNode, error) {
 	var inCache bool
 	if ns.cache != nil {
 		var res interface{}
@@ -99,12 +106,20 @@ func (ns *NodeStore) ReadChunkCfg(ctx context.Context, c cid.Cid) (schema.ChunkC
 	return *cfg, nil
 }
 
-func (ns *NodeStore) WriteChunkConfig(ctx context.Context, cfg schema.ChunkConfig) (cid.Cid, error) {
+func (ns *NodeStore) WriteChunkConfig(ctx context.Context, cfg schema.ChunkConfig, prefix *cid.Prefix) (cid.Cid, error) {
+	var linkProto cidlink.LinkPrototype
+	if prefix == nil {
+		// default linkproto
+		linkProto = schema.LinkProto
+	} else {
+		linkProto = cidlink.LinkPrototype{Prefix: *prefix}
+	}
+
 	ipldNode, err := cfg.ToNode()
 	if err != nil {
 		return cid.Undef, err
 	}
-	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, schema.LinkProto, ipldNode)
+	lnk, err := ns.lsys.Store(ipld.LinkContext{Ctx: ctx}, linkProto, ipldNode)
 	if err != nil {
 		return cid.Undef, err
 	}

@@ -1,28 +1,56 @@
 type ProllyNode struct {
+    # raw keys(keys/values input from users) for leaf node. For branch nodes, the key is last key in the child node,
+    # if data(k/v pairs) are sorted and increase, it's the biggest key in the child node
 	Keys [Bytes]
-    # leaf nodes
+	# raw values for leaf nodes. For branch nodes, it's null.
 	Values nullable [Bytes]
-    # internal nodes
+    # null for leaf nodes. For branch nodes, it's the cid of the child node. So (key, link) is the the last key and cid
+    # about the child node. Key is used for searching and cid is used for loading the child node from local storage or
+    # network
 	Links nullable [Link_ProllyNode]
-    # 0 for leaf
+    # 0 for leaf nodes, and add 1 for parent
 	Level Int
-    # item count (number of k/v pairs)
+    # number of k/v paris in the node, whatever it's leaf or branch node
 	Count Int
+	# chunk strategy about how the prolly tree is built. We should mutate the tree with the same strategy, or may lead to
+	# worst performance and even unknown error, it's the same with merge action
 	Cfg Link_ChunkConfig
 } representation tuple
 
 type Link_ProllyNode &ProllyNode
 
+# chunk config about key splitter,
+# keySplitter is a nodeSplitter that makes chunk boundary decisions on the hash of
+# the key of a []byte pair. In contrast to the rollingHashSplitter, keySplitter
+# tries to create chunks that have an average number of []byte pairs, rather than
+# an average number of Bytes. However, because the target number of []byte pairs
+# is computed directly from the chunk size and count, the practical difference in
+# the distribution of chunk sizes is minimal.
+#
+# keySplitter uses a dynamic threshold modeled on a weibull distribution
+# (https://en.wikipedia.org/wiki/Weibull_distribution). As the size of the current
+# trunk increases, it becomes easier to pass the threshold, reducing the likelihood
+# of forming very large or very small chunks.
 type KeySplitterConfig struct{
-    TargetSize  Float
     K           Float
     L           Float
 } representation tuple
 
+
+# rollingHashSplitter is a nodeSplitter that makes chunk boundary decisions using
+# a rolling value hasher that processes Item pairs in a byte-wise fashion.
+#
+# rollingHashSplitter uses a dynamic hash pattern designed to constrain the chunk
+# Size distribution by reducing the likelihood of forming very large or very small
+# chunks. As the Size of the current chunk grows, rollingHashSplitter changes the
+# target pattern to make it easier to match. The result is a chunk Size distribution
+# that is closer to a binomial distribution, rather than geometric.
 type RollingHashConfig struct{
     RollingHashWindow   Int
 } representation tuple
 
+# Chunk Config for prolly tree, it includes some global setting, the splitter method you choose and specific configs about
+# the splitter
 type ChunkConfig struct{
     MinChunkSize Int
     MaxChunkSize Int

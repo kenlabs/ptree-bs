@@ -94,7 +94,7 @@ func (nb *nodeBuilder) recycleBuffers() {
 func writeNewNode(ctx context.Context, ns *NodeStore, nb *nodeBuilder) (*novelNode, error) {
 	node := nb.build()
 
-	addr, err := ns.Write(ctx, node)
+	addr, err := ns.WriteNode(ctx, node, nil)
 	if err != nil {
 		return nil, err
 	}
