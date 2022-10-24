@@ -10,11 +10,9 @@ type ProllyNode struct {
 	Links nullable [Link_ProllyNode]
     # 0 for leaf nodes, and add 1 for parent level
 	Level Int
-    # number of k/v paris in the node, whatever it's leaf or branch node
-	Count Int
 	# chunk strategy about how the prolly tree is built. We should mutate the tree with the same strategy, or may lead to
 	# worst performance and even unknown error, it's the same with merge action
-	Cfg Link_ChunkConfig
+	ChunkConfig Link_ChunkConfig
 } representation tuple
 
 type Link_ProllyNode &ProllyNode

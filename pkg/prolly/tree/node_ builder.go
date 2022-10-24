@@ -50,12 +50,11 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 	_keys := make([][]byte, len(nb.keys))
 	copy(_keys, nb.keys)
 	n := schema.ProllyNode{
-		Keys:   _keys,
-		Values: nil,
-		Links:  nil,
-		Level:  nb.level,
-		Count:  uint16(len(nb.keys)),
-		Cfg:    nb.cfg,
+		Keys:        _keys,
+		Values:      nil,
+		Links:       nil,
+		Level:       nb.level,
+		ChunkConfig: nb.cfg,
 	}
 	if nb.level == 0 {
 		_vals := make([][]byte, len(nb.values))

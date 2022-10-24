@@ -26,12 +26,15 @@ func NewEmptyChunker(ctx context.Context, ns *NodeStore, cfg *schema.ChunkConfig
 }
 
 func newChunker(ctx context.Context, cur *Cursor, level int, cfg *schema.ChunkConfig, cfgCid cid.Cid, ns *NodeStore) (*Chunker, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("nil chunk config")
+	}
 	var splitter nodeSplitter
 	switch cfg.ChunkStrategy {
 	case schema.KeySplitter:
 		splitter = defaultSplitterFactory(uint8(level%256), cfg)
 	case schema.RollingHash:
-		splitter = newRollingHashSplitter(uint8(levelSalt[level%256]), cfg)
+		splitter = newRollingHashSplitter(uint8(level%256), cfg)
 	default:
 		panic(fmt.Errorf("unsupported chunk strategy: %s", cfg.ChunkStrategy))
 	}

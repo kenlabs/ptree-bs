@@ -45,7 +45,7 @@ func searchNode(query []byte, nd schema.ProllyNode) int {
 }
 
 func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore) *StaticTree {
-	cfg, err := ns.ReadChunkCfg(context.Background(), node.Cfg)
+	cfg, err := ns.ReadChunkCfg(context.Background(), node.ChunkConfig)
 	if err != nil {
 		panic(err.Error())
 	}

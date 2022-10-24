@@ -11,12 +11,11 @@ func TestGenIPLDNode(t *testing.T) {
 	assert.NoError(t, err)
 
 	nd := &ProllyNode{
-		Keys:   [][]byte{[]byte("123k")},
-		Values: [][]byte{[]byte("123v")},
-		Links:  []cid.Cid{c1},
-		Level:  0,
-		Count:  0,
-		Cfg:    cid.Undef,
+		Keys:        [][]byte{[]byte("123k")},
+		Values:      [][]byte{[]byte("123v")},
+		Links:       []cid.Cid{c1},
+		Level:       0,
+		ChunkConfig: cid.Undef,
 	}
 
 	_, err = nd.ToNode()

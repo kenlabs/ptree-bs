@@ -24,12 +24,11 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	assert.NoError(t, err)
 
 	nd := &schema.ProllyNode{
-		Keys:   [][]byte{[]byte("123k")},
-		Values: [][]byte{[]byte("123v")},
-		Links:  []cid.Cid{c1},
-		Level:  199998,
-		Count:  25000,
-		Cfg:    cfgCid,
+		Keys:        [][]byte{[]byte("123k")},
+		Values:      [][]byte{[]byte("123v")},
+		Links:       []cid.Cid{c1},
+		Level:       199998,
+		ChunkConfig: cfgCid,
 	}
 
 	ctx := context.Background()
@@ -40,14 +39,13 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	inode, err := ns.ReadNode(ctx, c)
 	assert.NoError(t, err)
 
-	_cfg, err := ns.ReadChunkCfg(context.Background(), inode.Cfg)
+	_cfg, err := ns.ReadChunkCfg(context.Background(), inode.ChunkConfig)
 	assert.NoError(t, err)
 
 	assert.Equal(t, nd.Keys, inode.Keys)
 	assert.Equal(t, nd.Values, inode.Values)
 	assert.Equal(t, nd.Level, inode.Level)
 	assert.Equal(t, nd.Links, inode.Links)
-	assert.Equal(t, nd.Count, inode.Count)
-	assert.Equal(t, nd.Cfg, inode.Cfg)
+	assert.Equal(t, nd.ChunkConfig, inode.ChunkConfig)
 	assert.True(t, _cfg.Equal(cfg))
 }

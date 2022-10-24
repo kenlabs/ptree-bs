@@ -45,7 +45,7 @@ func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, 
 	st := NewStaticProllyTree(root, ns)
 
 	costTime := time.Since(startTime)
-	t.Logf("Creating tree(size:%d) with cache(size:%d) costs time: %v", len(data), cacheSize, costTime)
+	t.Logf("Creating tree(size:%d) with cache(size:%d) and %s costs time: %v", len(data), cacheSize, cfg.ChunkStrategy, costTime)
 
 	return st, ds
 }

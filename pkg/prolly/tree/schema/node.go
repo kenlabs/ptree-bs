@@ -23,15 +23,13 @@ type ProllyNode struct {
 	Links []cid.Cid
 	// 0 for leaf nodes, and add 1 for parent level
 	Level int
-	// number of k/v paris in the node, whatever it's leaf or branch node
-	Count uint16
 	// chunk strategy(ChunkConfig) about how the prolly tree is built. We should mutate the tree with the same strategy, or may lead to
 	// the worst performance and even unknown error, it's the same with merge action
-	Cfg cid.Cid
+	ChunkConfig cid.Cid
 }
 
 func (nd *ProllyNode) ItemCount() int {
-	return int(nd.Count)
+	return len(nd.Keys)
 }
 
 func (nd *ProllyNode) IsLeaf() bool {
