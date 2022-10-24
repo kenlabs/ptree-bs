@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// temporal node struct in tree building procedure, it describes a ProllyNode and contains the information we need
 type novelNode struct {
 	node    schema.ProllyNode
 	addr    cid.Cid
@@ -16,13 +17,13 @@ type novelNode struct {
 type nodeBuilder struct {
 	keys, values [][]byte
 	size, level  int
-	cfg          cid.Cid
+	chunkCfg     cid.Cid
 }
 
 func newNodeBuilder(level int, cfgCid cid.Cid) *nodeBuilder {
 	nb := &nodeBuilder{
-		level: level,
-		cfg:   cfgCid,
+		level:    level,
+		chunkCfg: cfgCid,
 	}
 	return nb
 }
@@ -47,6 +48,7 @@ func (nb *nodeBuilder) count() int {
 }
 
 func (nb *nodeBuilder) build() (node schema.ProllyNode) {
+	// prevent from pointer pollution
 	_keys := make([][]byte, len(nb.keys))
 	copy(_keys, nb.keys)
 	n := schema.ProllyNode{
@@ -54,9 +56,10 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 		Values:      nil,
 		Links:       nil,
 		Level:       nb.level,
-		ChunkConfig: nb.cfg,
+		ChunkConfig: nb.chunkCfg,
 	}
 	if nb.level == 0 {
+		// prevent from pointer pollution
 		_vals := make([][]byte, len(nb.values))
 		copy(_vals, nb.values)
 		n.Values = _vals
@@ -67,7 +70,8 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 			if err != nil {
 				panic(err.Error())
 			}
-			if n != CidBytesLen {
+			// todo: if linkProto can be defined by user, the condition may be removed
+			if n != schema.CidBytesLen {
 				panic("wrong cid bytes length")
 			}
 			cids[i] = c
@@ -90,6 +94,7 @@ func (nb *nodeBuilder) recycleBuffers() {
 func writeNewNode(ctx context.Context, ns *NodeStore, nb *nodeBuilder) (*novelNode, error) {
 	node := nb.build()
 
+	// write ProllyNode to block store(by link system)
 	addr, err := ns.WriteNode(ctx, node, nil)
 	if err != nil {
 		return nil, err
@@ -99,6 +104,7 @@ func writeNewNode(ctx context.Context, ns *NodeStore, nb *nodeBuilder) (*novelNo
 	if node.ItemCount() > 0 {
 		k := node.GetKey(node.ItemCount() - 1)
 		lastKey = make([]byte, len(k))
+		// pointer pollution
 		copy(lastKey, k)
 	}
 

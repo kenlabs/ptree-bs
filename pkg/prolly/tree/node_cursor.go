@@ -12,11 +12,10 @@ type ItemSearchFn func(item []byte, nd schema.ProllyNode) (idx int)
 type CompareFn func(left, right []byte) int
 
 type Cursor struct {
-	nd       schema.ProllyNode
-	idx      int
-	parent   *Cursor
-	subtrees []uint64
-	ns       *NodeStore
+	nd     schema.ProllyNode
+	idx    int
+	parent *Cursor
+	ns     *NodeStore
 }
 
 func (cur *Cursor) CurrentKey() []byte {
@@ -27,10 +26,12 @@ func (cur *Cursor) CurrentValue() []byte {
 	return cur.nd.GetValue(cur.idx)
 }
 
+// CurrentRef returns cid for current idx
 func (cur *Cursor) CurrentRef() cid.Cid {
 	return cur.nd.GetAddress(cur.idx)
 }
 
+// move cursor to the end of current node
 func (cur *Cursor) atNodeEnd() bool {
 	lastKeyIdx := cur.nd.ItemCount() - 1
 	return cur.idx == lastKeyIdx
@@ -44,6 +45,10 @@ func (cur *Cursor) level() uint64 {
 	return uint64(cur.nd.Level)
 }
 
+// Seek updates the cursor's node to one whose range spans the key's value, or the last
+// node if the key is greater than all existing keys.
+// If a node does not contain the key, we recurse upwards to the parent cursor. If the
+// node contains a key, we recurse downwards into child nodes.
 func (cur *Cursor) seek(ctx context.Context, key []byte, cp CompareFn) error {
 	inBounds := true
 	if cur.parent != nil {
@@ -167,7 +172,6 @@ func (cur *Cursor) Advance(ctx context.Context) error {
 	}
 
 	cur.skipToNodeStart()
-	cur.subtrees = nil // lazy load
 
 	return nil
 }
@@ -188,6 +192,21 @@ func compareCursors(left, right *Cursor) int {
 	return diff
 }
 
+// Compare returns the highest relative index difference
+// between two cursor trees. A parent has a higher precedence
+// than its child.
+//
+// Ex:
+//
+// cur:   L3 -> 4, L2 -> 2, L1 -> 5, L0 -> 2
+// other: L3 -> 4, L2 -> 2, L1 -> 5, L0 -> 4
+//
+//	res => -2 (from level 0)
+//
+// cur:   L3 -> 4, L2 -> 2, L1 -> 5, L0 -> 2
+// other: L3 -> 4, L2 -> 3, L1 -> 5, L0 -> 4
+//
+//	res => -1 (from level 2)
 func (cur *Cursor) Compare(other *Cursor) int {
 	return compareCursors(cur, other)
 }
@@ -325,6 +344,7 @@ func NewCursorAtEnd(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) (*
 	return cur, nil
 }
 
+// NewCursorPastEnd arrives the last index then advance() again
 func NewCursorPastEnd(ctx context.Context, ns *NodeStore, nd schema.ProllyNode) (*Cursor, error) {
 	cur, err := NewCursorAtEnd(ctx, ns, nd)
 	if err != nil {

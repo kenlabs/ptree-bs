@@ -47,6 +47,10 @@ func TestMergeWithoutOverlap(t *testing.T) {
 
 	newTree, err := MergeStaticTrees(ctx, st1, st2)
 	assert.NoError(t, err)
+	assert.Equal(t, newTree.ChunkCfg, st1.ChunkCfg)
+	assert.Equal(t, newTree.ChunkCfg, st2.ChunkCfg)
+	assert.Equal(t, st1.ChunkCfg, st2.ChunkCfg)
+
 	t.Log(newTree)
 
 	totalData := append(data, data2...)

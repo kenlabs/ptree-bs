@@ -3,7 +3,6 @@ package tree
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
@@ -25,7 +24,7 @@ func DefaultBytesCompare(left, right []byte) int {
 // searchNode returns the smallest index where nd[i] >= query
 // Adapted from search.Sort to inline comparison.
 func searchNode(query []byte, nd schema.ProllyNode) int {
-	n := int(nd.ItemCount())
+	n := nd.ItemCount()
 	// Define f(-1) == false and f(n) == true.
 	// Invariant: f(i-1) == false, f(j) == true.
 	i, j := 0, n
@@ -61,27 +60,12 @@ func (st *StaticTree) Mutate() *MutableTree {
 	return NewMutableProllyTree(st)
 }
 
-func (st *StaticTree) Copy() StaticTree {
-	rootBytes, err := json.Marshal(st.Root)
-	if err != nil {
-		panic(err)
-	}
-	_st := StaticTree{Ns: st.Ns}
-	err = json.Unmarshal(rootBytes, &_st.Root)
-	if err != nil {
-		panic(err)
-	}
-	return _st
-}
-
 func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
 	cur, err := NewLeafCursorAtItem(ctx, st.Ns, st.Root, key, searchNode)
 	if err != nil {
 		return nil, err
 	}
 
-	//var key []byte
-	//var value []byte
 	if cur.Valid() {
 		keyFound := cur.CurrentKey()
 		if DefaultBytesCompare(key, keyFound) == 0 {

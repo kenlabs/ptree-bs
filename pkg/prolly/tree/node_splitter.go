@@ -27,8 +27,6 @@ var levelSalt = [...]uint64{
 	saltFromLevel(15),
 }
 
-var defaultSplitterFactory splitterFactory = newKeySplitter
-
 // splitterFactory makes a nodeSplitter.
 type splitterFactory func(level uint8, cfg *schema.ChunkConfig) nodeSplitter
 
@@ -67,14 +65,7 @@ type keySplitter struct {
 }
 
 const (
-	//targetSize float64 = 4096
 	maxUint32 float64 = math.MaxUint32
-
-	// weibull params
-	//K = 4.
-
-	// TODO: seems like this should be targetSize / math.Gamma(1 + 1/K).
-	//L = targetSize
 )
 
 func newKeySplitter(level uint8, cfg *schema.ChunkConfig) nodeSplitter {

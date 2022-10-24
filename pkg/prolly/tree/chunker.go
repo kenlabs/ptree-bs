@@ -32,7 +32,7 @@ func newChunker(ctx context.Context, cur *Cursor, level int, cfg *schema.ChunkCo
 	var splitter nodeSplitter
 	switch cfg.ChunkStrategy {
 	case schema.KeySplitter:
-		splitter = defaultSplitterFactory(uint8(level%256), cfg)
+		splitter = newKeySplitter(uint8(level%256), cfg)
 	case schema.RollingHash:
 		splitter = newRollingHashSplitter(uint8(level%256), cfg)
 	default:

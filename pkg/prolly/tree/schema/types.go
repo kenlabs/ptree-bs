@@ -70,13 +70,6 @@ func (cfg *ChunkConfig) ToNode() (n ipld.Node, err error) {
 }
 
 func UnwrapChunkConfig(node ipld.Node) (*ChunkConfig, error) {
-	// When an IPLD node is loaded using `Prototype.Any` unwrap with bindnode will not work.
-	// Here we defensively check the prototype and wrap if needed, since:
-	//   - linksystem in sti is passed into other libraries, like go-legs, and
-	//   - for whatever reason clients of this package may load nodes using Prototype.Any.
-	//
-	// The code in this repo, however should load nodes with appropriate prototype and never trigger
-	// this if statement.
 	if node.Prototype() != ChunkConfigPrototype {
 		cfgBuilder := ChunkConfigPrototype.NewBuilder()
 		err := cfgBuilder.AssignNode(node)

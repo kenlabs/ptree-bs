@@ -12,8 +12,6 @@ import (
 	"ptree-bs/pkg/prolly/tree/schema"
 )
 
-const CidBytesLen = 20
-
 type storeConfig struct {
 	cacheSize int
 }

@@ -77,6 +77,7 @@ func sendPatches(ctx context.Context, differ Differ, buf patchBuffer) error {
 }
 
 func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (StaticTree, error) {
+	// check config equality
 	if !base.ChunkCfg.Equal(new.ChunkCfg) {
 		return StaticTree{}, fmt.Errorf("can not merger two trees with different chunk config, %#v and %#v", base.ChunkCfg, new.ChunkCfg)
 	}
@@ -87,14 +88,16 @@ func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (S
 	}
 
 	return StaticTree{
-		Root: root,
-		Ns:   base.Ns,
+		Root:     root,
+		Ns:       base.Ns,
+		ChunkCfg: base.ChunkCfg,
 	}, nil
 }
 
 func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schema.ProllyNode, cfg *schema.ChunkConfig, order CompareFn) (schema.ProllyNode, error) {
 	var result schema.ProllyNode
 
+	// differ iter
 	df, err := DifferFromRoots(ctx, ns, base, new, order)
 	if err != nil {
 		return schema.ProllyNode{}, err
@@ -109,11 +112,13 @@ func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schem
 				err = cerr
 			}
 		}()
+		// send modified pathes asynchronously
 		err = sendPatches(ctx, df, patches)
 		return
 	})
 
 	eg.Go(func() error {
+		// apply mutations asynchronously
 		result, err = ApplyMutations(ctx, ns, base, cfg, patches, DefaultBytesCompare)
 		return err
 	})

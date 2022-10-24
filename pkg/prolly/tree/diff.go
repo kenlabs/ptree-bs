@@ -11,8 +11,6 @@ type DiffType byte
 const (
 	AddedDiff    DiffType = 0
 	ModifiedDiff DiffType = 1
-	// todo not use now
-	//RemovedDiff  DiffType = 2
 )
 
 type Diff struct {
@@ -36,23 +34,26 @@ func (df *Differ) Next(ctx context.Context) (Diff, error) {
 
 		switch {
 		case cmp < 0:
-			// todo: we only add or update the prolly tree now
+			// todo: we only add or update the prolly tree now, ignore the delete action
 			if err = df.base.Advance(ctx); err != nil {
 				return Diff{}, err
 			}
 		case cmp > 0:
+			// add new key/value
 			return sendAdded(ctx, df.new)
 		case cmp == 0:
+			// if key equals but values differ, modify it
 			if !equalCursorValues(df.base, df.new) {
 				return sendModified(ctx, df.base, df.new)
 			}
-
+			// try skip most common
 			if err = skipCommon(ctx, df.base, df.new); err != nil {
 				return Diff{}, err
 			}
 		}
 	}
 
+	// if new does not arrive the end, sendAdded
 	if df.new.Valid() && df.new.Compare(df.newStop) < 0 {
 		return sendAdded(ctx, df.new)
 	}

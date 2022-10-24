@@ -9,6 +9,7 @@ import (
 var mplog = log.Logger("mutableTree")
 
 type MutableTree struct {
+	// edits buffer
 	edits *skip.List
 	tree  StaticTree
 }
@@ -33,7 +34,6 @@ func (mp *MutableTree) Tree(ctx context.Context) (StaticTree, error) {
 	if err := mp.ApplyPending(ctx); err != nil {
 		return StaticTree{}, err
 	}
-	//tr := mp.tree.Copy()
 	tr := mp.tree
 
 	root, err := ApplyMutations(ctx, tr.Ns, tr.Root, mp.tree.ChunkCfg, mp.mutations(), DefaultBytesCompare)

@@ -50,6 +50,7 @@ func (nd *ProllyNode) GetValue(i int) []byte {
 
 func (nd *ProllyNode) GetAddress(i int) cid.Cid {
 	c := nd.Links[i]
+	// todo: if linkProto can be defined by user, the condition may be removed
 	if c.ByteLen() != CidBytesLen {
 		panic("invalid cid length")
 	}
