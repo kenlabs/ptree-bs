@@ -28,6 +28,7 @@ type ProllyNode struct {
 	ChunkConfig cid.Cid
 }
 
+// ItemCount returns the number of key/value pairs in the node
 func (nd *ProllyNode) ItemCount() int {
 	return len(nd.Keys)
 }
@@ -49,6 +50,9 @@ func (nd *ProllyNode) GetValue(i int) []byte {
 }
 
 func (nd *ProllyNode) GetAddress(i int) cid.Cid {
+	if nd.Level == 0 {
+		panic("can not get address in leaf node")
+	}
 	c := nd.Links[i]
 	// todo: if linkProto can be defined by user, the condition may be removed
 	if c.ByteLen() != CidBytesLen {

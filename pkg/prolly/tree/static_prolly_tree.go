@@ -44,6 +44,7 @@ func searchNode(query []byte, nd schema.ProllyNode) int {
 }
 
 func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore) *StaticTree {
+	// load chunk config from the ProllyNode's ChunkConfig cid
 	cfg, err := ns.ReadChunkCfg(context.Background(), node.ChunkConfig)
 	if err != nil {
 		panic(err.Error())
@@ -61,6 +62,7 @@ func (st *StaticTree) Mutate() *MutableTree {
 }
 
 func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
+	// create cursor and try to find the key(maybe not exist)
 	cur, err := NewLeafCursorAtItem(ctx, st.Ns, st.Root, key, searchNode)
 	if err != nil {
 		return nil, err
@@ -68,6 +70,7 @@ func (st *StaticTree) Get(ctx context.Context, key []byte) ([]byte, error) {
 
 	if cur.Valid() {
 		keyFound := cur.CurrentKey()
+		// if not exist, the key is the closest key bigger than it or invalid
 		if DefaultBytesCompare(key, keyFound) == 0 {
 			value := cur.CurrentValue()
 			return value, nil

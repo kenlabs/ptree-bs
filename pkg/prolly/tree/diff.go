@@ -25,6 +25,7 @@ type Differ struct {
 	order             CompareFn
 }
 
+// Next returns the next different item between base and new tree
 func (df *Differ) Next(ctx context.Context) (Diff, error) {
 	var err error
 	for df.base.Valid() && df.base.Compare(df.baseStop) < 0 && df.new.Valid() && df.new.Compare(df.newStop) < 0 {
@@ -62,6 +63,7 @@ func (df *Differ) Next(ctx context.Context) (Diff, error) {
 
 }
 
+// send added k/v pair and advance new cursor
 func sendAdded(ctx context.Context, add *Cursor) (diff Diff, err error) {
 	diff = Diff{
 		Type: AddedDiff,
@@ -75,6 +77,7 @@ func sendAdded(ctx context.Context, add *Cursor) (diff Diff, err error) {
 	return
 }
 
+// send modified k/v pair and advance both base and new cursors
 func sendModified(ctx context.Context, base, new *Cursor) (diff Diff, err error) {
 	diff = Diff{
 		Type: ModifiedDiff,
@@ -96,11 +99,13 @@ func equalCursorValues(left, right *Cursor) bool {
 	return bytes.Equal(left.CurrentValue(), right.CurrentValue())
 }
 
+// return whether the k/v pairs in two cursors equals
 func equalItems(left, right *Cursor) bool {
 	return bytes.Equal(left.CurrentKey(), right.CurrentKey()) &&
 		bytes.Equal(left.CurrentValue(), right.CurrentValue())
 }
 
+// skip most and go to the next difference
 func skipCommon(ctx context.Context, from, to *Cursor) (err error) {
 	// track when |from.parent| and |to.parent| change
 	// to avoid unnecessary comparisons.
