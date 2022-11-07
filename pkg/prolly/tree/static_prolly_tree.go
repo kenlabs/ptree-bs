@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"ptree-bs/pkg/prolly/tree/schema"
 )
 
@@ -43,18 +44,27 @@ func searchNode(query []byte, nd schema.ProllyNode) int {
 	return i
 }
 
-func NewStaticProllyTree(node schema.ProllyNode, ns *NodeStore) *StaticTree {
+func LoadProllyTreeFromRootNode(node schema.ProllyNode, ns *NodeStore) (*StaticTree, error) {
 	// load chunk config from the ProllyNode's ChunkConfig cid
 	cfg, err := ns.ReadChunkCfg(context.Background(), node.ChunkConfig)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	return &StaticTree{
 		Root:     node,
 		Ns:       ns,
 		ChunkCfg: &cfg,
+	}, nil
+}
+
+func LoadProllyTreeFromRootCid(rootCid cid.Cid, ns *NodeStore) (*StaticTree, error) {
+	ctx := context.Background()
+	rootNode, err := ns.ReadNode(ctx, rootCid)
+	if err != nil {
+		return nil, err
 	}
+	return LoadProllyTreeFromRootNode(rootNode, ns)
 }
 
 func (st *StaticTree) Mutate() *MutableTree {

@@ -3,7 +3,6 @@ package tree
 import (
 	"context"
 	"github.com/zeebo/assert"
-	//"ptree-bs/prolly/tree"
 	"testing"
 )
 
@@ -26,7 +25,8 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	st1 := NewStaticProllyTree(root, ns)
+	st1, err := LoadProllyTreeFromRootNode(root, ns)
+	assert.NoError(t, err)
 
 	data2 := make([][2][]byte, 1000)
 	for i := range data2 {
@@ -43,7 +43,8 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(root2)
 
-	st2 := NewStaticProllyTree(root2, ns)
+	st2, err := LoadProllyTreeFromRootNode(root2, ns)
+	assert.NoError(t, err)
 
 	newTree, err := MergeStaticTrees(ctx, st1, st2)
 	assert.NoError(t, err)
@@ -80,7 +81,8 @@ func TestMergeWithOverlap(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	st1 := NewStaticProllyTree(root, ns)
+	st1, err := LoadProllyTreeFromRootNode(root, ns)
+	assert.NoError(t, err)
 
 	data2 := make([][2][]byte, 1500)
 	for i := range data2 {
@@ -97,7 +99,8 @@ func TestMergeWithOverlap(t *testing.T) {
 	root2, err := ck2.Done(ctx)
 	assert.NoError(t, err)
 
-	st2 := NewStaticProllyTree(root2, ns)
+	st2, err := LoadProllyTreeFromRootNode(root2, ns)
+	assert.NoError(t, err)
 
 	newTree, err := MergeStaticTrees(ctx, st1, st2)
 	assert.NoError(t, err)

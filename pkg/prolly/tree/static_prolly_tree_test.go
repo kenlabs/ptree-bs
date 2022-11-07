@@ -31,7 +31,8 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 	assert.NoError(t, err)
 	//t.Log(root)
 
-	st := NewStaticProllyTree(root, ns)
+	st, err := LoadProllyTreeFromRootNode(root, ns)
+	assert.NoError(t, err)
 
 	for i := 0; i < 1000; i++ {
 		idx := rand.Intn(10000)
