@@ -42,7 +42,8 @@ func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, 
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	st := NewStaticProllyTree(root, ns)
+	st, err := LoadProllyTreeFromRootNode(root, ns)
+	assert.NoError(t, err)
 
 	costTime := time.Since(startTime)
 	t.Logf("Creating tree(size:%d) with cache(size:%d) and %s costs time: %v", len(data), cacheSize, cfg.ChunkStrategy, costTime)
@@ -310,7 +311,9 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 			root, err := ck.Done(ctx)
 			assert.NoError(t, err)
 
-			originPTree := NewStaticProllyTree(root, ns)
+			originPTree, err := LoadProllyTreeFromRootNode(root, ns)
+			assert.NoError(t, err)
+
 			insertsData := RandomTuplePairs(tc.insertLen)
 
 			var st StaticTree

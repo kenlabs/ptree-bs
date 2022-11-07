@@ -28,7 +28,8 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 	root, err := ck.Done(ctx)
 	assert.NoError(t, err)
 
-	originPTree := NewStaticProllyTree(root, ns)
+	originPTree, err := LoadProllyTreeFromRootNode(root, ns)
+	assert.NoError(t, err)
 
 	inserts := make([][2][]byte, len(data))
 	for i := range data {
