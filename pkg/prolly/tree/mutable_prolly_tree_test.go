@@ -77,5 +77,5 @@ func materializePTree(t *testing.T, mut *MutableTree) StaticTree {
 
 	m, err := mut.Tree(ctx)
 	assert.NoError(t, err)
-	return m
+	return *m
 }

@@ -9,9 +9,10 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"ptree-bs/pkg/prolly/tree/schema"
+	"runtime"
 )
 
-func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool) (string, error) {
+func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool, name string) (string, error) {
 	type graphNode struct {
 		nd   schema.ProllyNode
 		c    cid.Cid
@@ -75,21 +76,33 @@ func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool) (stri
 			}
 		}
 	}
-	ioutil.WriteFile("tree.dot", []byte(graph.String()), 0666)
+	dotFileName := name + ".dot"
+	pngFileName := name + ".png"
+	err = ioutil.WriteFile(dotFileName, []byte(graph.String()), 0666)
+	if err != nil {
+		return "", err
+	}
 
-	system("dot tree.dot -T png -o 12.png")
+	system(fmt.Sprintf("dot %s -T png -o %s", dotFileName, pngFileName))
 
 	return graph.String(), nil
 }
 
 func system(s string) {
-	cmd := exec.Command(`cmd`, "/C", s)
+	var cmd *exec.Cmd
+	osType := runtime.GOOS
+	if osType == "windows" {
+		cmd = exec.Command(`cmd`, "/C", s)
+	} else {
+		cmd = exec.Command(`/bin/sh`, `-c`, s)
+	}
+
 	var out bytes.Buffer
 
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("falied to generated png file from dot auto, err: %v", err)
 	}
 	fmt.Printf("%s", out.String())
 }

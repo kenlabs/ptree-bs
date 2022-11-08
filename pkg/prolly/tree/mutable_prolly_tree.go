@@ -30,18 +30,18 @@ func NewMutableProllyTree(st *StaticTree) *MutableTree {
 	}
 }
 
-func (mp *MutableTree) Tree(ctx context.Context) (StaticTree, error) {
+func (mp *MutableTree) Tree(ctx context.Context) (*StaticTree, error) {
 	if err := mp.ApplyPending(ctx); err != nil {
-		return StaticTree{}, err
+		return nil, err
 	}
 	tr := mp.tree
 
 	root, err := ApplyMutations(ctx, tr.Ns, tr.Root, mp.tree.ChunkCfg, mp.mutations(), DefaultBytesCompare)
 	if err != nil {
-		return StaticTree{}, err
+		return nil, err
 	}
 
-	return StaticTree{
+	return &StaticTree{
 		Root: root,
 		Ns:   tr.Ns,
 	}, nil
