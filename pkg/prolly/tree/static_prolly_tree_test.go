@@ -50,4 +50,28 @@ func TestCreateStaticMapAndGet(t *testing.T) {
 		}
 		assert.True(t, ok)
 	}
+
+	assert.NoError(t, err)
+}
+
+func TestCreateStaticMapAndGetAndOutputDot(t *testing.T) {
+	ctx := context.Background()
+	ns := newTestNodeStore()
+	testdata := RandomStringTuplePairs(10000)
+
+	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
+	assert.NoError(t, err)
+	for _, pair := range testdata {
+		err = ck.AddPair(ctx, pair[0], pair[1])
+		assert.NoError(t, err)
+	}
+	root, err := ck.Done(ctx)
+	assert.NoError(t, err)
+	//t.Log(root)
+
+	st, err := LoadProllyTreeFromRootNode(root, ns)
+	assert.NoError(t, err)
+
+	_, err = ExportTreeToDot(ctx, st, true)
+	assert.NoError(t, err)
 }
