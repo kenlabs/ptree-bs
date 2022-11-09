@@ -19,20 +19,33 @@ func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool, name 
 		name string
 	}
 
-	//nd := tree.Root
-	graphAst, _ := gographviz.ParseString(`digraph G {}`)
+	graphAst, err := gographviz.ParseString(`digraph G {
+	}`)
+	if err != nil {
+		return "", err
+	}
 	graph := gographviz.NewGraph()
 	if err := gographviz.Analyse(graphAst, graph); err != nil {
 		panic(err)
 	}
+
+	// the package not support set global node attrs, we must apply it in each node
+	nodeGlobalAttrs := make(map[string]string)
+	nodeGlobalAttrs["shape"] = "box"
+	leafNodesAttrs := make(map[string]string)
+	leafNodesAttrs["shape"] = "plaintext"
+
+	graph.AddAttr("G", "rankdir", "LR")
+
 	// todo  may be tree struct should save the root cid
 	c, err := tree.Ns.WriteNode(ctx, tree.Root, nil)
 	if err != nil {
 		return "", err
 	}
-	graph.AddNode("G", "Root"+c.String(), nil)
+	graph.AddNode("G", "Root_"+c.String(), nodeGlobalAttrs)
+
 	queue := make([]graphNode, 0)
-	queue = append(queue, graphNode{tree.Root, c, "Root" + c.String()})
+	queue = append(queue, graphNode{tree.Root, c, "Root_" + c.String()})
 	for len(queue) != 0 {
 		gnd := queue[0]
 		queue = queue[1:]
@@ -46,13 +59,15 @@ func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool, name 
 				newNode := graphNode{
 					nd:   nd,
 					c:    childCid,
-					name: childCid.String(),
+					name: childCid.String()[:4] + `_` + childCid.String()[28:],
 				}
-				err = graph.AddNode("G", newNode.name, nil)
+				err = graph.AddNode("G", newNode.name, nodeGlobalAttrs)
 				if err != nil {
 					return "", err
 				}
-				err = graph.AddEdge(gnd.name, newNode.name, true, nil)
+				// not set in the global map, it will pollute others attrs
+				graph.Nodes.Lookup[newNode.name].Attrs["tooltip"] = childCid.String()
+				err = graph.AddEdge(gnd.name, newNode.name, true, map[string]string{"label": "KEY_" + string(gnd.nd.GetKey(i))})
 				if err != nil {
 					return "", err
 				}
@@ -61,14 +76,12 @@ func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool, name 
 		} else {
 			if !hideLeaf {
 				for i := 0; i < gnd.nd.ItemCount(); i++ {
-					k := gnd.nd.GetKey(i)
-					//v := gnd.nd.GetValue(i)
-					vNodeName := string(k)
-					err = graph.AddNode("G", vNodeName, nil)
+					vNodeName := string(gnd.nd.GetValue(i))
+					err = graph.AddNode("G", vNodeName, leafNodesAttrs)
 					if err != nil {
 						return "", err
 					}
-					err = graph.AddEdge(gnd.name, vNodeName, true, nil)
+					err = graph.AddEdge(gnd.name, vNodeName, true, map[string]string{"label": "KEY_" + string(gnd.nd.GetKey(i))})
 					if err != nil {
 						return "", err
 					}
@@ -77,13 +90,13 @@ func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool, name 
 		}
 	}
 	dotFileName := name + ".dot"
-	pngFileName := name + ".png"
+	pngFileName := name + ".svg"
 	err = ioutil.WriteFile(dotFileName, []byte(graph.String()), 0666)
 	if err != nil {
 		return "", err
 	}
 
-	system(fmt.Sprintf("dot %s -T png -o %s", dotFileName, pngFileName))
+	system(fmt.Sprintf("dot %s -T svg -o %s", dotFileName, pngFileName))
 
 	return graph.String(), nil
 }

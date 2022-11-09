@@ -2,6 +2,7 @@ package tree
 
 import (
 	"encoding/binary"
+	"github.com/sethvargo/go-diceware/diceware"
 	"math/rand"
 	"sort"
 	"strings"
@@ -96,8 +97,10 @@ func RandomIntTuplePairs(count int) [][2][]byte {
 func RandomStringTuplePairs(count int) [][2][]byte {
 	data := make([][2][]byte, count)
 	for i := range data {
-		key := RandNumString(15)
-		val := RandNumString(20)
+		keys, _ := diceware.Generate(2)
+		key := joinStrings(keys)
+		vals, _ := diceware.Generate(5)
+		val := joinStrings(vals)
 
 		data[i][0] = []byte(key)
 		data[i][1] = []byte(val)
@@ -122,7 +125,8 @@ func RandomStringTuplePairs(count int) [][2][]byte {
 
 		// replace duplicates and validate again
 		for _, d := range dupes {
-			key := RandAllString(15)
+			keys, _ := diceware.Generate(2)
+			key := joinStrings(keys)
 
 			data[d][0] = []byte(key)
 		}
@@ -132,40 +136,12 @@ func RandomStringTuplePairs(count int) [][2][]byte {
 	return data
 }
 
-var CHARS = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-	"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
-
-/*RandAllString  ([a~zA~Z0~9])
- */
-func RandAllString(lenNum int) string {
-	str := strings.Builder{}
-	length := len(CHARS)
-	for i := 0; i < lenNum; i++ {
-		l := CHARS[rand.Intn(length)]
-		str.WriteString(l)
+func joinStrings(strs []string) string {
+	for i, key := range strs {
+		bytesKey := []byte(key)
+		bytesKey[0] -= 32
+		strs[i] = string(bytesKey)
 	}
-	return str.String()
-}
-
-/*RandNumString ([0~9])
- */
-func RandNumString(lenNum int) string {
-	str := strings.Builder{}
-	length := 10
-	for i := 0; i < lenNum; i++ {
-		str.WriteString(CHARS[52+rand.Intn(length)])
-	}
-	return str.String()
-}
-
-/*RandString  (a~zA~Z])
- */
-func RandString(lenNum int) string {
-	str := strings.Builder{}
-	length := 52
-	for i := 0; i < lenNum; i++ {
-		str.WriteString(CHARS[rand.Intn(length)])
-	}
-	return str.String()
+	res := strings.Join(strs, "")
+	return res
 }
