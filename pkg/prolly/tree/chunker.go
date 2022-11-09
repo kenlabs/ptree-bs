@@ -274,7 +274,10 @@ func (c *Chunker) Done(ctx context.Context) (schema.ProllyNode, error) {
 		}
 	}
 
-	if c.parent != nil && c.parent.anyPending() {
+	//if c.parent != nil && c.parent.anyPending() {
+	// todo: meaningless condition?  the top node.anyPending() must is true, because if when boundary generated there must be
+	//  parent node, so the top node must have no boundary generated, so I delete the condition use in dolt
+	if c.parent != nil {
 		if c.builder.count() > 0 {
 			if err := c.handleBoundary(ctx); err != nil {
 				return schema.ProllyNode{}, err
