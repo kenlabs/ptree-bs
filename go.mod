@@ -3,18 +3,17 @@ module ptree-bs
 go 1.19
 
 require (
-	github.com/awalterschulze/gographviz v2.0.3+incompatible // indirect
+	github.com/awalterschulze/gographviz v2.0.3+incompatible
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/ipfs/go-block-format v0.0.3
-	github.com/ipfs/go-blockservice v0.3.0
+	github.com/ipfs/go-blockservice v0.3.0 // indirect
 	github.com/ipfs/go-cid v0.2.0
 	github.com/ipfs/go-datastore v0.5.1
 	github.com/ipfs/go-ds-leveldb v0.5.0
 	github.com/ipfs/go-ipfs-blockstore v1.2.0
-	github.com/ipfs/go-ipfs-exchange-offline v0.2.0
-	github.com/ipfs/go-ipld-format v0.3.0
+	github.com/ipfs/go-ipld-format v0.3.0 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1
-	github.com/ipfs/go-merkledag v0.6.0
+	github.com/ipfs/go-merkledag v0.6.0 // indirect
 	github.com/ipld/go-car v0.5.0
 	github.com/ipld/go-car/v2 v2.5.1
 	github.com/ipld/go-ipld-prime v0.18.0
@@ -25,6 +24,8 @@ require (
 	github.com/zeebo/xxh3 v1.0.2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
+
+require github.com/sethvargo/go-diceware v0.3.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -55,7 +56,6 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
-	github.com/sethvargo/go-diceware v0.3.0 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect

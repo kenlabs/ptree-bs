@@ -15,11 +15,11 @@ const (
 // Chunk Config for prolly tree, it includes some global setting, the splitter method you choose and specific configs about
 // the splitter
 type ChunkConfig struct {
-	MinChunkSize   uint32
-	MaxChunkSize   uint32
-	ChunkStrategy  ChunkStrategy
-	KeySplitterCfg *KeySplitterConfig
-	RollingHashCfg *RollingHashConfig
+	MinChunkSize      uint32
+	MaxChunkSize      uint32
+	ChunkStrategy     ChunkStrategy
+	KeySplitterConfig *KeySplitterConfig
+	RollingHashConfig *RollingHashConfig
 }
 
 // chunk config about key splitter,
@@ -60,11 +60,11 @@ func DefaultChunkConfig() *ChunkConfig {
 		MinChunkSize:  DefaultMinChunkSize,
 		MaxChunkSize:  DefaultMaxChunkSize,
 		ChunkStrategy: KeySplitter,
-		KeySplitterCfg: &KeySplitterConfig{
+		KeySplitterConfig: &KeySplitterConfig{
 			K: 4,
 			L: 4096,
 		},
-		RollingHashCfg: &RollingHashConfig{
+		RollingHashConfig: &RollingHashConfig{
 			RollingHashWindow: 67,
 		},
 	}
@@ -75,9 +75,9 @@ func (cfg *ChunkConfig) Equal(config *ChunkConfig) bool {
 		return false
 	}
 	if cfg.ChunkStrategy == KeySplitter {
-		return cfg.KeySplitterCfg.L == config.KeySplitterCfg.L &&
-			cfg.KeySplitterCfg.K == config.KeySplitterCfg.K
+		return cfg.KeySplitterConfig.L == config.KeySplitterConfig.L &&
+			cfg.KeySplitterConfig.K == config.KeySplitterConfig.K
 	} else {
-		return cfg.RollingHashCfg.RollingHashWindow == config.RollingHashCfg.RollingHashWindow
+		return cfg.RollingHashConfig.RollingHashWindow == config.RollingHashConfig.RollingHashWindow
 	}
 }

@@ -89,14 +89,16 @@ func ExportTreeToDot(ctx context.Context, tree *StaticTree, hideLeaf bool, name 
 			}
 		}
 	}
-	dotFileName := name + ".dot"
-	pngFileName := name + ".svg"
-	err = ioutil.WriteFile(dotFileName, []byte(graph.String()), 0666)
-	if err != nil {
-		return "", err
-	}
+	if name != "" {
+		dotFileName := name + ".dot"
+		pngFileName := name + ".svg"
+		err = ioutil.WriteFile(dotFileName, []byte(graph.String()), 0666)
+		if err != nil {
+			return "", err
+		}
 
-	system(fmt.Sprintf("dot %s -T svg -o %s", dotFileName, pngFileName))
+		system(fmt.Sprintf("dot %s -T svg -o %s", dotFileName, pngFileName))
+	}
 
 	return graph.String(), nil
 }

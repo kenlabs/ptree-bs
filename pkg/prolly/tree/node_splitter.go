@@ -91,7 +91,7 @@ func (ks *keySplitter) Append(key, value []byte) error {
 	}
 
 	h := xxHash32(key, ks.salt)
-	ks.crossedBoundary = weibullCheck(ks.size, thisSize, h, ks.cfg.KeySplitterCfg.K, ks.cfg.KeySplitterCfg.L)
+	ks.crossedBoundary = weibullCheck(ks.size, thisSize, h, ks.cfg.KeySplitterConfig.K, ks.cfg.KeySplitterConfig.L)
 	return nil
 }
 
@@ -178,8 +178,8 @@ var _ nodeSplitter = &rollingHashSplitter{}
 
 func newRollingHashSplitter(salt uint8, cfg *schema.ChunkConfig) nodeSplitter {
 	return &rollingHashSplitter{
-		bz:     buzhash.NewBuzHash(cfg.RollingHashCfg.RollingHashWindow),
-		window: cfg.RollingHashCfg.RollingHashWindow,
+		bz:     buzhash.NewBuzHash(cfg.RollingHashConfig.RollingHashWindow),
+		window: cfg.RollingHashConfig.RollingHashWindow,
 		salt:   salt,
 		cfg:    cfg,
 	}

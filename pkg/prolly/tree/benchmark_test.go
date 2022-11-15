@@ -17,11 +17,17 @@ var (
 		MinChunkSize:  1 << 9,
 		MaxChunkSize:  1 << 14,
 		ChunkStrategy: schema.RollingHash,
-		RollingHashCfg: &schema.RollingHashConfig{
+		RollingHashConfig: &schema.RollingHashConfig{
 			RollingHashWindow: 67,
 		},
 	}
 )
+
+func skipIfShortTest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip benchmark test in short mode.")
+	}
+}
 
 func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, data [][2][]byte, cfg *schema.ChunkConfig) (*StaticTree, *leveldb.Datastore) {
 	testDbDir := t.TempDir()
@@ -52,6 +58,8 @@ func createStaticTreeFromData(ctx context.Context, t *testing.T, cacheSize int, 
 }
 
 func TestBuildStaticTree(t *testing.T) {
+	skipIfShortTest(t)
+
 	type testCase struct {
 		dataLength int
 		CacheSize  int
@@ -105,6 +113,8 @@ func TestBuildStaticTree(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
+	skipIfShortTest(t)
+
 	// build statictree from 500000 pairs of kvs
 	dataLength := 500000
 	ctx := context.Background()
@@ -132,6 +142,8 @@ func Test500KStaticTreeRead50KWithoutCache(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWithoutCacheRollingHash(t *testing.T) {
+	skipIfShortTest(t)
+
 	dataLength := 500000
 	ctx := context.Background()
 
@@ -155,6 +167,8 @@ func Test500KStaticTreeRead50KWithoutCacheRollingHash(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith16KCache(t *testing.T) {
+	skipIfShortTest(t)
+
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
@@ -177,6 +191,8 @@ func Test500KStaticTreeRead50KWith16KCache(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith16KCacheRollingHash(t *testing.T) {
+	skipIfShortTest(t)
+
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
@@ -199,6 +215,8 @@ func Test500KStaticTreeRead50KWith16KCacheRollingHash(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith4KCache(t *testing.T) {
+	skipIfShortTest(t)
+
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
@@ -221,6 +239,8 @@ func Test500KStaticTreeRead50KWith4KCache(t *testing.T) {
 }
 
 func Test500KStaticTreeRead50KWith4KCacheRollingHash(t *testing.T) {
+	skipIfShortTest(t)
+
 	dataLength := 500000
 	testdata := RandomTuplePairs(dataLength)
 	ctx := context.Background()
@@ -243,6 +263,8 @@ func Test500KStaticTreeRead50KWith4KCacheRollingHash(t *testing.T) {
 }
 
 func TestCreateTreeAndMutateRandom(t *testing.T) {
+	skipIfShortTest(t)
+
 	type testCase struct {
 		staticTreeLen int
 		insertLen     int
@@ -294,6 +316,7 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 			ctx := context.Background()
 			testDbDir := t.TempDir()
 			ds, err := leveldb.NewDatastore(testDbDir, nil)
+			defer ds.Close()
 			assert.NoError(t, err)
 			bs := blockstore.NewBlockstore(ds)
 			ns, err := NewNodeStore(bs, &storeConfig{cacheSize: tc.cacheSize})
@@ -339,8 +362,6 @@ func TestCreateTreeAndMutateRandom(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, value, totalData[idx][1])
 			}
-
-			_ = ds.Close()
 		}
 
 	}

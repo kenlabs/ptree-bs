@@ -17,11 +17,11 @@ func TestCreateStaticMapAndGetAndOutputDot(t *testing.T) {
 		MinChunkSize:  1 << 3,
 		MaxChunkSize:  1 << 8,
 		ChunkStrategy: schema.KeySplitter,
-		KeySplitterCfg: &schema.KeySplitterConfig{
+		KeySplitterConfig: &schema.KeySplitterConfig{
 			K: 4,
 			L: 100,
 		},
-		RollingHashCfg: &schema.RollingHashConfig{
+		RollingHashConfig: &schema.RollingHashConfig{
 			RollingHashWindow: 67,
 		},
 	}
@@ -39,7 +39,7 @@ func TestCreateStaticMapAndGetAndOutputDot(t *testing.T) {
 	st, err := LoadProllyTreeFromRootNode(root, ns)
 	assert.NoError(t, err)
 
-	_, err = ExportTreeToDot(ctx, st, false, "Tree1")
+	_, err = ExportTreeToDot(ctx, st, false, "")
 	assert.NoError(t, err)
 
 	mutTree := st.Mutate()
@@ -51,6 +51,6 @@ func TestCreateStaticMapAndGetAndOutputDot(t *testing.T) {
 	st, err = mutTree.Tree(ctx)
 	assert.NoError(t, err)
 
-	_, err = ExportTreeToDot(ctx, st, false, "Tree2")
+	_, err = ExportTreeToDot(ctx, st, false, "")
 	assert.NoError(t, err)
 }

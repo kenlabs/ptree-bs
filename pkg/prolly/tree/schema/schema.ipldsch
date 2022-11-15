@@ -7,15 +7,13 @@ type ProllyNode struct {
     # null for leaf nodes. For branch nodes, it's the cid of the child node. So (key, link) is the the last key and cid
     # about the child node. Key is used for searching and cid is used for loading the child node from local storage or
     # network
-	Links nullable [Link_ProllyNode]
+	Links nullable [&ProllyNode]
     # 0 for leaf nodes, and add 1 for parent level
 	Level Int
 	# chunk strategy about how the prolly tree is built. We should mutate the tree with the same strategy, or may lead to
 	# worst performance and even unknown error, it's the same with merge action
 	ChunkConfig Link_ChunkConfig
 } representation tuple
-
-type Link_ProllyNode &ProllyNode
 
 # chunk config about key splitter,
 # keySplitter is a nodeSplitter that makes chunk boundary decisions on the hash of
@@ -53,8 +51,8 @@ type ChunkConfig struct{
     MinChunkSize Int
     MaxChunkSize Int
     ChunkStrategy String
-    KeySplitterCfg nullable KeySplitterConfig
-    RollingHashCfg nullable RollingHashConfig
+    KeySplitterConfig nullable KeySplitterConfig
+    RollingHashConfig nullable RollingHashConfig
 } representation tuple
 
 type Link_ChunkConfig &ChunkConfig
