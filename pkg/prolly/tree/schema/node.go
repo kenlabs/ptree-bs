@@ -15,12 +15,11 @@ type ProllyNode struct {
 	// raw keys(keys/values input from users) for leaf node. For branch nodes, the key is last key in the child node,
 	// if data(k/v pairs) are sorted and increase, it's the biggest key in the child node
 	Keys [][]byte
-	// raw values for leaf nodes. For branch nodes, it's null.
-	Values [][]byte
+	// For branch nodes, they are cids of children nodes. For leaf nodes, they are cids indexed(reference of real data)
+	Values []cid.Cid
 	// null for leaf nodes. For branch nodes, it's the cid of the child node. So (key, link) is the the last key and cid
 	// about the child node. Key is used for searching and cid is used for loading the child node from local storage or
 	// network
-	Links []cid.Cid
 	// 0 for leaf nodes, and add 1 for parent level
 	Level int
 	// chunk strategy(ChunkConfig) about how the prolly tree is built. We should mutate the tree with the same strategy, or may lead to
@@ -42,18 +41,14 @@ func (nd *ProllyNode) GetKey(i int) []byte {
 }
 
 func (nd *ProllyNode) GetValue(i int) []byte {
-	if nd.Level == 0 {
-		return nd.Values[i]
-	} else {
-		return nd.Links[i].Bytes()
-	}
+	return nd.Values[i].Bytes()
 }
 
 func (nd *ProllyNode) GetAddress(i int) cid.Cid {
 	if nd.Level == 0 {
 		panic("can not get address in leaf node")
 	}
-	c := nd.Links[i]
+	c := nd.Values[i]
 	// todo: if linkProto can be defined by user, the condition may be removed
 	if c.ByteLen() != CidBytesLen {
 		panic("invalid cid length")

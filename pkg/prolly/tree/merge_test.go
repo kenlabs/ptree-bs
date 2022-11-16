@@ -3,6 +3,7 @@ package tree
 import (
 	"context"
 	"github.com/zeebo/assert"
+	"ptree-bs/pkg/prolly/tree/schema"
 	"testing"
 )
 
@@ -13,7 +14,10 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	data := make([][2][]byte, 1000)
 	for i := range data {
 		v := []byte(string(rune(i * 2)))
-		data[i][0], data[i][1] = v, v
+		val := make([]byte, (testRand.Int63()%30)+15)
+		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
+		data[i][0], data[i][1] = v, c.Bytes()
 	}
 
 	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
@@ -31,7 +35,10 @@ func TestMergeWithoutOverlap(t *testing.T) {
 	data2 := make([][2][]byte, 1000)
 	for i := range data2 {
 		v := []byte(string(rune(i*2 + 1)))
-		data2[i][0], data2[i][1] = v, v
+		val := make([]byte, (testRand.Int63()%30)+15)
+		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
+		data2[i][0], data2[i][1] = v, c.Bytes()
 	}
 	ck2, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)
@@ -68,8 +75,11 @@ func TestMergeWithOverlap(t *testing.T) {
 
 	data := make([][2][]byte, 1000)
 	for i := range data {
-		v := []byte(string(rune(i * 2)))
-		data[i][0], data[i][1] = v, v
+		k := []byte(string(rune(i * 2)))
+		val := make([]byte, (testRand.Int63()%30)+15)
+		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
+		data[i][0], data[i][1] = k, c.Bytes()
 	}
 
 	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
@@ -87,8 +97,10 @@ func TestMergeWithOverlap(t *testing.T) {
 	data2 := make([][2][]byte, 1500)
 	for i := range data2 {
 		k := []byte(string(rune(i * 2)))
-		v := []byte(string(rune(i*3 + 1)))
-		data2[i][0], data2[i][1] = k, v
+		val := make([]byte, (testRand.Int63()%30)+15)
+		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
+		data2[i][0], data2[i][1] = k, c.Bytes()
 	}
 	ck2, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
 	assert.NoError(t, err)

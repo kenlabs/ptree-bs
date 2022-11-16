@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"github.com/sethvargo/go-diceware/diceware"
 	"math/rand"
+	"ptree-bs/pkg/prolly/tree/schema"
 	"sort"
 	"strings"
 )
@@ -17,8 +18,9 @@ func RandomTuplePairs(count int) [][2][]byte {
 		val := make([]byte, (testRand.Int63()%30)+15)
 		testRand.Read(key)
 		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
 		data[i][0] = key
-		data[i][1] = val
+		data[i][1] = c.Bytes()
 	}
 
 	dupes := make([]int, 0, count)
@@ -101,9 +103,10 @@ func RandomStringTuplePairs(count int) [][2][]byte {
 		key := joinStrings(keys)
 		vals, _ := diceware.Generate(5)
 		val := joinStrings(vals)
+		c, _ := schema.LinkProto.Sum([]byte(val))
 
 		data[i][0] = []byte(key)
-		data[i][1] = []byte(val)
+		data[i][1] = c.Bytes()
 	}
 
 	dupes := make([]int, 0, count)

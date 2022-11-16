@@ -54,30 +54,24 @@ func (nb *nodeBuilder) build() (node schema.ProllyNode) {
 	n := schema.ProllyNode{
 		Keys:        _keys,
 		Values:      nil,
-		Links:       nil,
 		Level:       nb.level,
 		ChunkConfig: nb.chunkCfg,
 	}
-	if nb.level == 0 {
-		// prevent from pointer pollution
-		_vals := make([][]byte, len(nb.values))
-		copy(_vals, nb.values)
-		n.Values = _vals
-	} else {
-		cids := make([]cid.Cid, len(nb.values))
-		for i, cidBytes := range nb.values {
-			n, c, err := cid.CidFromBytes(cidBytes)
-			if err != nil {
-				panic(err.Error())
-			}
-			// todo: if linkProto can be defined by user, the condition may be removed
-			if n != schema.CidBytesLen {
-				panic("wrong cid bytes length")
-			}
-			cids[i] = c
+	cids := make([]cid.Cid, len(nb.values))
+
+	for i, cidBytes := range nb.values {
+		n, c, err := cid.CidFromBytes(cidBytes)
+		if err != nil {
+			panic(err.Error())
 		}
-		n.Links = cids
+		// todo: if linkProto can be defined by user, the condition may be removed
+		// !=0 because the indexed CIDs are not decided by ProllyTree
+		if n != schema.CidBytesLen && nb.level != 0 {
+			panic("wrong cid bytes length")
+		}
+		cids[i] = c
 	}
+	n.Values = cids
 
 	nb.recycleBuffers()
 	nb.size = 0

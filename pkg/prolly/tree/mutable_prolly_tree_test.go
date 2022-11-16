@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
+	"ptree-bs/pkg/prolly/tree/schema"
 	"testing"
 )
 
@@ -14,7 +15,10 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 	data := make([][2][]byte, 1000)
 	for i := range data {
 		v := []byte(string(rune(i * 2)))
-		data[i][0], data[i][1] = v, v
+		val := make([]byte, (testRand.Int63()%30)+15)
+		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
+		data[i][0], data[i][1] = v, c.Bytes()
 	}
 
 	ck, err := NewEmptyChunker(ctx, ns, chunkSplitterCfg)
@@ -34,7 +38,10 @@ func TestMutablePTreeWriteAndGet(t *testing.T) {
 	inserts := make([][2][]byte, len(data))
 	for i := range data {
 		inserts[i][0] = []byte(string(rune(i*2 + 1)))
-		inserts[i][1] = []byte(string(rune(i*2 + 1)))
+		val := make([]byte, (testRand.Int63()%30)+15)
+		testRand.Read(val)
+		c, _ := schema.LinkProto.Sum(val)
+		inserts[i][1] = c.Bytes()
 	}
 
 	var st StaticTree

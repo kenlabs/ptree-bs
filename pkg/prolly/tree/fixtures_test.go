@@ -7,7 +7,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-car"
 	car2 "github.com/ipld/go-car/v2"
-	selectorparse "github.com/ipld/go-ipld-prime/traversal/selector/parse"
+	"github.com/ipld/go-ipld-prime/traversal/selector"
 	"github.com/zeebo/assert"
 	"os"
 	"testing"
@@ -78,7 +78,7 @@ func verifyTree(t *testing.T, fset *fixtureSet) {
 	ctx := context.Background()
 	ns := newTestNodeStore()
 
-	// build tree.car from the same data and config
+	// build tree from the same data and config
 	ck, err := NewEmptyChunker(ctx, ns, fset.tree.ChunkCfg)
 	assert.NoError(t, err)
 	for _, pair := range fset.testData {
@@ -104,7 +104,7 @@ func verifyTree(t *testing.T, fset *fixtureSet) {
 	assert.Equal(t, fset.rootCid, newRootCid)
 
 	buf := new(bytes.Buffer)
-	size, err := car2.TraverseV1(ctx, ns.lsys, newRootCid, selectorparse.CommonSelector_ExploreAllRecursively, buf)
+	size, err := car2.TraverseV1(ctx, ns.lsys, newRootCid, ExploreRecursiveWithStopNode(selector.RecursionLimitDepth(int64(root.Level)), nil, nil), buf)
 	assert.NoError(t, err)
 	assert.Equal(t, int(size), fset.carSize)
 }

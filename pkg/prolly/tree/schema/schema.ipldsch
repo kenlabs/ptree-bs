@@ -2,17 +2,13 @@ type ProllyNode struct {
     # raw keys(keys/values input from users) for leaf node. For branch nodes, the key is last key in the child node,
     # if data(k/v pairs) are sorted and increase, it's the biggest key in the child node
 	Keys [Bytes]
-	# raw values for leaf nodes. For branch nodes, it's null.
-	Values nullable [Bytes]
-    # null for leaf nodes. For branch nodes, it's the cid of the child node. So (key, link) is the the last key and cid
-    # about the child node. Key is used for searching and cid is used for loading the child node from local storage or
-    # network
-	Links nullable [&ProllyNode]
+	# For branch nodes, they are cids of children nodes. For leaf nodes, they are cids indexed(reference of real data)
+	Values [Link]
     # 0 for leaf nodes, and add 1 for parent level
 	Level Int
 	# chunk strategy about how the prolly tree is built. We should mutate the tree with the same strategy, or may lead to
 	# worst performance and even unknown error, it's the same with merge action
-	ChunkConfig Link_ChunkConfig
+	ChunkConfig &ChunkConfig
 } representation tuple
 
 # chunk config about key splitter,
@@ -28,7 +24,9 @@ type ProllyNode struct {
 # trunk increases, it becomes easier to pass the threshold, reducing the likelihood
 # of forming very large or very small chunks.
 type KeySplitterConfig struct{
+    # shape parameter, default value is 4
     K           Float
+    # scale parameter(λ), default value is 4096
     L           Float
 } representation tuple
 
@@ -54,5 +52,3 @@ type ChunkConfig struct{
     KeySplitterConfig nullable KeySplitterConfig
     RollingHashConfig nullable RollingHashConfig
 } representation tuple
-
-type Link_ChunkConfig &ChunkConfig

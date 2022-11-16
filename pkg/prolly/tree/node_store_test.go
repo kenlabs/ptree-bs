@@ -25,8 +25,7 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 
 	nd := &schema.ProllyNode{
 		Keys:        [][]byte{[]byte("123k")},
-		Values:      [][]byte{[]byte("123v")},
-		Links:       []cid.Cid{c1},
+		Values:      []cid.Cid{c1},
 		Level:       199998,
 		ChunkConfig: cfgCid,
 	}
@@ -45,7 +44,6 @@ func TestIPLDNodeStoreLoad(t *testing.T) {
 	assert.Equal(t, nd.Keys, inode.Keys)
 	assert.Equal(t, nd.Values, inode.Values)
 	assert.Equal(t, nd.Level, inode.Level)
-	assert.Equal(t, nd.Links, inode.Links)
 	assert.Equal(t, nd.ChunkConfig, inode.ChunkConfig)
 	assert.True(t, _cfg.Equal(cfg))
 }

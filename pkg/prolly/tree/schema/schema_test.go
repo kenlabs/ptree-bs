@@ -7,9 +7,11 @@ import (
 )
 
 func TestGenIPLDNode(t *testing.T) {
+	cid1, _ := LinkProto.Sum([]byte("123v"))
+
 	nd := &ProllyNode{
 		Keys:        [][]byte{[]byte("123k")},
-		Values:      [][]byte{[]byte("123v")},
+		Values:      []cid.Cid{cid1},
 		Level:       0,
 		ChunkConfig: cid.Undef,
 	}
@@ -18,5 +20,5 @@ func TestGenIPLDNode(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, nd.GetKey(0), []byte("123k"))
-	assert.Equal(t, nd.GetValue(0), []byte("123v"))
+	assert.Equal(t, nd.GetValue(0), cid1.Bytes())
 }
