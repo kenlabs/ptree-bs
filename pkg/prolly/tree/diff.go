@@ -152,7 +152,7 @@ func skipCommonParents(ctx context.Context, from, to *Cursor) (err error) {
 	}
 
 	if from.parent.Valid() {
-		if err = from.fetchNode(ctx); err != nil {
+		if err = from.loadNodeFromParent(ctx); err != nil {
 			return err
 		}
 		from.skipToNodeStart()
@@ -161,7 +161,7 @@ func skipCommonParents(ctx context.Context, from, to *Cursor) (err error) {
 	}
 
 	if to.parent.Valid() {
-		if err = to.fetchNode(ctx); err != nil {
+		if err = to.loadNodeFromParent(ctx); err != nil {
 			return err
 		}
 		to.skipToNodeStart()

@@ -37,7 +37,7 @@ func ApplyMutations(ctx context.Context, ns *NodeStore, root schema.ProllyNode, 
 		return root, nil
 	}
 
-	cur, err := NewCursorFromCompareFn(ctx, ns, root, newKey, compare)
+	cur, err := NewCursorAtKey(ctx, ns, root, newKey, compare)
 	if err != nil {
 		return schema.ProllyNode{}, err
 	}

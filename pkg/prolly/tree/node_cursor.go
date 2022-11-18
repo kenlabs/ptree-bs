@@ -9,6 +9,8 @@ import (
 
 type ItemSearchFn func(item []byte, nd schema.ProllyNode) (idx int)
 
+type SearchFn func(nd schema.ProllyNode) (idx int)
+
 type CompareFn func(left, right []byte) int
 
 type Cursor struct {
@@ -132,7 +134,7 @@ func (cur *Cursor) OutOfBounds() bool {
 	return cur.idx < 0 || cur.idx >= cur.nd.ItemCount()
 }
 
-func (cur *Cursor) fetchNode(ctx context.Context) error {
+func (cur *Cursor) loadNodeFromParent(ctx context.Context) error {
 	if cur.parent == nil {
 		panic("invalid action")
 	}
@@ -166,7 +168,7 @@ func (cur *Cursor) Advance(ctx context.Context) error {
 		return nil
 	}
 
-	err = cur.fetchNode(ctx)
+	err = cur.loadNodeFromParent(ctx)
 	if err != nil {
 		return err
 	}
@@ -242,18 +244,14 @@ func (cur *Cursor) copy(other *Cursor) {
 	}
 }
 
-func NewCursorFromCompareFn(ctx context.Context, ns *NodeStore, n schema.ProllyNode, item []byte, compare CompareFn) (*Cursor, error) {
-	return NewCursorAtItem(ctx, ns, n, item, func(item []byte, nd schema.ProllyNode) (idx int) {
-		return sort.Search(nd.ItemCount(), func(i int) bool {
-			return compare(item, nd.GetKey(i)) <= 0
-		})
-	})
+func NewCursorAtKey(ctx context.Context, ns *NodeStore, n schema.ProllyNode, item []byte, compare CompareFn) (*Cursor, error) {
+	return NewCursorFromSearchFn(ctx, ns, n, searchNode(item, compare))
 }
 
-func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
+func NewCursorFromSearchFn(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, search SearchFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, ns: ns}
 
-	cur.idx = search(item, cur.nd)
+	cur.idx = search(cur.nd)
 	for !cur.isLeaf() {
 
 		// stay in bounds for internal nodes
@@ -267,16 +265,18 @@ func NewCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, i
 		parent := cur
 		cur = &Cursor{nd: nd, parent: parent, ns: ns}
 
-		cur.idx = search(item, cur.nd)
+		cur.idx = search(cur.nd)
 	}
 
 	return cur, nil
 }
 
-func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, item []byte, search ItemSearchFn) (*Cursor, error) {
+// NewLeafCursorAtItem returns single Cursor without parent, only use for get or has an item
+func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNode, item []byte, cp CompareFn) (*Cursor, error) {
 	cur := &Cursor{nd: nd, parent: nil, ns: ns}
 
-	cur.idx = search(item, cur.nd)
+	searchFn := searchNode(item, cp)
+	cur.idx = searchFn(nd)
 
 	var err error
 	for !cur.isLeaf() {
@@ -287,7 +287,7 @@ func NewLeafCursorAtItem(ctx context.Context, ns *NodeStore, nd schema.ProllyNod
 			return cur, err
 		}
 
-		cur.idx = search(item, cur.nd)
+		cur.idx = searchFn(cur.nd)
 	}
 
 	return cur, nil

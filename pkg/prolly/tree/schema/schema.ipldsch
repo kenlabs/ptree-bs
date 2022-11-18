@@ -48,7 +48,12 @@ type RollingHashConfig struct{
 type ChunkConfig struct{
     MinChunkSize Int
     MaxChunkSize Int
-    ChunkStrategy String
+    ChunkStrategy ChunkStrategy
     KeySplitterConfig nullable KeySplitterConfig
     RollingHashConfig nullable RollingHashConfig
 } representation tuple
+
+type ChunkStrategy enum{
+    | keySplitter
+    | rollingHash
+} representation string
