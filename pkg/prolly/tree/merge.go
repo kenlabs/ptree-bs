@@ -1,0 +1,176 @@
+// Copyright 2021 Dolthub, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package tree
+
+import (
+	"context"
+	"fmt"
+	"golang.org/x/sync/errgroup"
+	"io"
+	"ptree-bs/pkg/prolly/tree/schema"
+	//"ptree-bs/prolly"
+)
+
+type patchBuffer struct {
+	buf chan patch
+}
+
+type patch [2][]byte
+
+var _ MutationIter = patchBuffer{}
+
+func newPatchBuffer(sz int) patchBuffer {
+	return patchBuffer{buf: make(chan patch, sz)}
+}
+
+func (pb patchBuffer) sendPatch(ctx context.Context, diff Diff) error {
+	p := patch{diff.Key, diff.To}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case pb.buf <- p:
+		return nil
+	}
+}
+
+// NextMutation implements MutationIter.
+func (pb patchBuffer) NextMutation(ctx context.Context) ([]byte, []byte) {
+	var p patch
+	select {
+	case p = <-pb.buf:
+		return p[0], p[1]
+	case <-ctx.Done():
+		return nil, nil
+	}
+}
+
+func (pb patchBuffer) Close() error {
+	close(pb.buf)
+	return nil
+}
+
+func sendPatches(ctx context.Context, differ Differ, buf patchBuffer) error {
+	var end bool
+	var err error
+	patch, err := differ.Next(ctx)
+	if err == io.EOF {
+		err, end = nil, true
+	}
+	if err != nil {
+		return err
+	}
+
+	for !end {
+		err = buf.sendPatch(ctx, patch)
+		if err != nil {
+			return err
+		}
+
+		patch, err = differ.Next(ctx)
+		if err == io.EOF {
+			err, end = nil, true
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func MergeStaticTrees(ctx context.Context, base *StaticTree, new *StaticTree) (StaticTree, error) {
+	// check config equality
+	if !base.ChunkCfg.Equal(new.ChunkCfg) {
+		return StaticTree{}, fmt.Errorf("can not merger two trees with different chunk config, %#v and %#v", base.ChunkCfg, new.ChunkCfg)
+	}
+
+	root, err := Merge(ctx, base.Ns, base.Root, new.Root, base.ChunkCfg, DefaultBytesCompare)
+	if err != nil {
+		return StaticTree{}, err
+	}
+
+	return StaticTree{
+		Root:     root,
+		Ns:       base.Ns,
+		ChunkCfg: base.ChunkCfg,
+	}, nil
+}
+
+func Merge(ctx context.Context, ns *NodeStore, base schema.ProllyNode, new schema.ProllyNode, cfg *schema.ChunkConfig, order CompareFn) (schema.ProllyNode, error) {
+	var result schema.ProllyNode
+
+	// differ iter
+	df, err := DifferFromRoots(ctx, ns, base, new, order)
+	if err != nil {
+		return schema.ProllyNode{}, err
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+	patches := newPatchBuffer(1024)
+
+	eg.Go(func() (err error) {
+		defer func() {
+			if cerr := patches.Close(); err == nil {
+				err = cerr
+			}
+		}()
+		// send modified pathes asynchronously
+		err = sendPatches(ctx, df, patches)
+		return
+	})
+
+	eg.Go(func() error {
+		// apply mutations asynchronously
+		result, err = ApplyMutations(ctx, ns, base, cfg, patches, DefaultBytesCompare)
+		return err
+	})
+
+	if err = eg.Wait(); err != nil {
+		return schema.ProllyNode{}, err
+	}
+
+	return result, nil
+}
+
+func DifferFromRoots(ctx context.Context, ns *NodeStore, base, new schema.ProllyNode, order CompareFn) (Differ, error) {
+	bc, err := NewCursorAtStart(ctx, ns, base)
+	if err != nil {
+		return Differ{}, err
+	}
+
+	nc, err := NewCursorAtStart(ctx, ns, new)
+	if err != nil {
+		return Differ{}, err
+	}
+
+	bs, err := NewCursorPastEnd(ctx, ns, base)
+	if err != nil {
+		return Differ{}, err
+	}
+
+	newStop, err := NewCursorPastEnd(ctx, ns, new)
+	if err != nil {
+		return Differ{}, err
+	}
+
+	return Differ{
+		base:     bc,
+		new:      nc,
+		baseStop: bs,
+		newStop:  newStop,
+		order:    order,
+	}, nil
+
+}
